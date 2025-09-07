@@ -10,14 +10,17 @@ from ctypes import windll
 #-----------------------------------------------------#
 
 def showInfo(pNameID):
-    print(pb.pokemon(pNameID).weight)
-    print(pb.pokemon(pNameID).height)
+    print('Name: ' + pb.pokemon(pNameID).name)
+    print('ID: ' + str(pb.pokemon(pNameID).id))
+    print('Weight: ' + str(pb.pokemon(pNameID).weight))
+    print('Height: ' + str(pb.pokemon(pNameID).height))
+    print('Order: ', str(pb.pokemon(pNameID).order))
         
 
 nameOrID = int(input("Enter name (0) or ID (1)? "))
 if nameOrID == 0:
-    monName = int(input("Enter name of Pokémon: "))
+    monName = input("Enter name of Pokémon: ")
+    showInfo(monName.lower())
 elif nameOrID == 1:
     monID = int(input("Enter ID of Pokémon: "))
-
-showInfo(pNameID)
+    showInfo(monID)
