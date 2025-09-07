@@ -4,6 +4,7 @@
 import pokebase as pb
 import tkinter as tk
 import PIL
+import requests
 from tkinter import PhotoImage, ttk
 from PIL import Image, ImageTk
 from ctypes import windll
@@ -27,7 +28,10 @@ class Pokemon():
 class SubMon(Pokemon):
     def __init__(self, id, name):
         super().__init__(id, name)
-        self.type = pb.pokemon(id).
+        self.type = pb.pokemon(id).types
+
+    def showType(self):
+        print(self.type)
 
 #def showInfo(pID):
     #print('Name: ' + pb.pokemon(pID).name)
@@ -40,6 +44,8 @@ monName = input("Enter name of Pokémon: ").lower()
 monID = pb.pokemon(monName).id
 #showInfo(monID)
 
-pokemon = Pokemon(monID, monName.lower())
-pokemon.showInfo()
+pokemon = SubMon(monID, monName.lower())
+#pokemon.showInfo()
+#pokemon.showType()
+print(pb.pokemon(monID).type)
 
