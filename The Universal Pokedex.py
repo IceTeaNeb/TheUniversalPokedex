@@ -9,18 +9,37 @@ from PIL import Image, ImageTk
 from ctypes import windll
 #-----------------------------------------------------#
 
-def showInfo(pNameID):
-    print('Name: ' + pb.pokemon(pNameID).name)
-    print('ID: ' + str(pb.pokemon(pNameID).id))
-    print('Weight: ' + str(pb.pokemon(pNameID).weight))
-    print('Height: ' + str(pb.pokemon(pNameID).height))
-    print('Order: ', str(pb.pokemon(pNameID).order))
-        
 
-nameOrID = int(input("Enter name (0) or ID (1)? "))
-if nameOrID == 0:
-    monName = input("Enter name of Pokémon: ")
-    showInfo(monName.lower())
-elif nameOrID == 1:
-    monID = int(input("Enter ID of Pokémon: "))
-    showInfo(monID)
+class Pokemon():
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+
+        self.weight = pb.pokemon(id).weight
+        self.height = pb.pokemon(id).height
+
+    def showInfo(self):
+        print('Name: ' + self.name)
+        print('ID: ' + str(self.id))
+        print('Height: ' + str(self.weight))
+        print('Weight: ' + str(self.height))
+
+class SubMon(Pokemon):
+    def __init__(self, id, name):
+        super().__init__(id, name)
+        self.type = pb.pokemon(id).
+
+#def showInfo(pID):
+    #print('Name: ' + pb.pokemon(pID).name)
+    #print('ID: ' + str(pb.pokemon(pID).id))
+    #print('Weight: ' + str(pb.pokemon(pID).weight))
+    #print('Height: ' + str(pb.pokemon(pID).height))
+    #print('Order: ', str(pb.pokemon(pID).order))
+        
+monName = input("Enter name of Pokémon: ").lower()
+monID = pb.pokemon(monName).id
+#showInfo(monID)
+
+pokemon = Pokemon(monID, monName.lower())
+pokemon.showInfo()
+
