@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run The Universal Pokedex",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/The Universal Pokedex.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}
