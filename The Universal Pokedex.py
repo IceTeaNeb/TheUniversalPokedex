@@ -10,25 +10,32 @@ from PIL import Image, ImageTk
 from ctypes import windll
 #-----------------------------------------------------#
 
+#def Main():
+
+
+
+
 class Item:
     def __init__(self, itemGroup, id, gen):
         self._itemGroup = itemGroup
         self._id = id
-        self._gen = gen
-        if self._itemGroup == 'mon':
-            langDict = {1:1, 2:1, 3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
-            self._name = pb.pokemon(id).name
-            self._flavorText = (pb.pokemon-species.flavor_text_entries[langDict[gen]].flavor_text).replace("\n", " ")
+        
+        while validIn == True:
+            if self._itemGroup == 'mon':
+                langDict = {1:1, 2:1, 3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
+                self._gen = pb.pokemon(id).
+                self._name = pb.pokemon(id).name
+                self._flavorText = (pb.pokemon_species.flavor_text_entries[langDict[gen]].flavor_text).replace("\n", " ")
 
-        elif self._itemGroup == 'move':
-            langDict = {1:6, 2:6, 3:0, 4:0, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
-            self._name = pb.move(id).name
-            self._flavorText = (pb.move(id).flavor_text_entries[langDict[gen]].flavor_text).replace("\n", " ")
+            elif self._itemGroup == 'move':
+                langDict = {1:6, 2:6, 3:0, 4:0, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
+                self._name = pb.move(id).name
+                self._flavorText = (pb.move(id).flavor_text_entries[langDict[gen]].flavor_text).replace("\n", " ")
 
-        elif self._itemGroup == 'ability':
-            langDict = {3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:1}   #gen : english index
-            self._name = pb.ability(id).name
-            self._flavorText = (pb.ability(id).flavor_text_entries[langDict[gen]].flavor_text).replace("\n", " ")
+            elif self._itemGroup == 'ability':
+                langDict = {3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:1}   #gen : english index
+                self._name = pb.ability(id).name
+                self._flavorText = (pb.ability(id).flavor_text_entries[langDict[gen]].flavor_text).replace("\n", " ")
     
     def getItemGroup(self):
         return self._itemGroup
@@ -42,7 +49,7 @@ class Item:
         return self._flavorText
 
 class Ability(Item):
-    def __init__(self):
+    def __init__(self, itemGroup, id, gen):
         super().__init__(itemGroup, id, gen)
 
 class Move(Item):
@@ -60,6 +67,11 @@ class Move(Item):
         for s in range(len(pb.move(id).stat_changes)):
             self._statChanges[pb.move(id).stat_changes[s].stat] = pb.move(id).stat_changes[s].change
 
+# class Mon(Item):
+#     def __init__(self, itemGroup, id, gen):
+#         super().__init__(itemGroup, id, gen)
+#         self._species = pb.genera(id).genus
+
 # inID = int(input("enter id: "))
 # #print(pb.pokemon(inID).name)
 # #print((pb.pokemon_species(inID).flavor_text_entries[0].flavor_text).replace("\n", " "))
@@ -73,8 +85,12 @@ class Move(Item):
 #print(pb.ability(inID).name)
 #print((pb.ability(inID).flavor_text_entries[1].flavor_text).replace("\n", " "))
 
-myMove = Move('move', 370, 6)
-#myAbility = Ability('ability', )
 
+# def itemInfo():
+#     itemType = input("Enter Item Type: ")
+#     if itemType == 'mon':
+#         myMon = Mon
+
+myMove = Move('move', 370, 4)
 flavorText = myMove.getFlavorText()
 print(flavorText)
