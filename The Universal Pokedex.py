@@ -104,6 +104,7 @@ class Mon(Item):
         self._eggCycle = pb.pokemon_species(id).hatch_counter
         self._evoChainID = pb.pokemon_species(id).evolution_chain.id
         self._evoList = []
+        self._evoList.append(pb.evolution_chain(self._evoChainID).chain.species.name)
         for i in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to)):
             self._evoList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].species.name)
         try:
@@ -183,23 +184,24 @@ class Mon(Item):
 # for i in statChanges:
 #     print(i)
 
-myMon = Mon('mon', 840)
-# type1 = myMon.getType1()
-# type2 = myMon.getType2()
-# HP = myMon.getHP()
-# Atk = myMon.getAtk()
-# Def = myMon.getDef()
-# SpA = myMon.getSpA()
-# SpD = myMon.getSpD()
-# Spe = myMon.getSpe()
-# BST = myMon.getBST()
-# stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
+myMon = Mon('mon', 1019)
+type1 = myMon.getType1()
+type2 = myMon.getType2()
+HP = myMon.getHP()
+Atk = myMon.getAtk()
+Def = myMon.getDef()
+SpA = myMon.getSpA()
+SpD = myMon.getSpD()
+Spe = myMon.getSpe()
+BST = myMon.getBST()
+stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
 evoList = myMon.getEvoList()
 preEvo = myMon.getPreEvo()
 name = myMon.getName()
-# print(type1)
-# print(type2)
-# print(stats)
-print(name)
-print(evoList)
-print(preEvo)
+
+print('Name: ' + name)
+print('Type 1: ', type1)
+print('Type 2: ', type2)
+print('Stats [BST, HP, Atk, Def, SpA, SpD, Spe]: ', stats)
+print('Evolution Chain: ', evoList)
+print('Pre-Evolution: ', preEvo)
