@@ -66,6 +66,8 @@ class Move(Item):
         self._dmgClass = pb.move(id).damage_class
         self._target = pb.move(id).target
         self._moveType = pb.move(id).type
+
+        ### sort out statChanges output
         self._statChanges = {'attack':0, 'defense':0, 'special-attack':0, 'special-defense':0, 'speed':0}
         for s in range(len(pb.move(id).stat_changes)):
             self._statChanges[pb.move(id).stat_changes[s].stat] = pb.move(id).stat_changes[s].change
@@ -76,11 +78,12 @@ class Move(Item):
 class Mon(Item):
     def __init__(self, itemGroup, id):
         super().__init__(itemGroup, id)
+        self._name = pb.pokemon_species(id).name
         self._species = pb.pokemon_species(id).genera[0]
         self._type1 = pb.pokemon(id).types[0].type.name
         try:
             self._type2 = pb.pokemon(id).types[1].type.name
-        except:
+        except IndexError:
             self._type2 = -1
         self._height = pb.pokemon(id).height
         self._weight = (pb.pokemon(id).weight)/10
@@ -94,10 +97,31 @@ class Mon(Item):
         self._BST = self._HP+self._Atk+self._Def+self._SpA+self._SpD+self._Spe
 
         self._catchRate = pb.pokemon_species(id).capture_rate
-        self._eggGroups = pb.pokemon
+        self._eggGroups = []
+        for i in pb.pokemon_species(id).egg_groups:
+            self._eggGroups.append(i.name)
+        self._gender = pb.pokemon_species(id).gender_rate
+        self._eggCycle = pb.pokemon_species(id).hatch_counter
+        self._evoChainID = pb.pokemon_species(id).evolution_chain.id
+        self._evoList = []
+        for i in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to)):
+            self._evoList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].species.name)
+        try:
+            for j in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].evolves_to)):
+                self._evoList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].evolves_to[j].species.name)
+        except:
+            pass
 
+        try:
+            self._preEvo = pb.pokemon_species(id).evolves_from_species.name
+        except AttributeError:
+            self._preEvo = -1
     
-
+    ##----Methods----##
+    def getName(self):
+        return self._name
+    def getSpecies(self):
+        return self._species
     def getType1(self):
         return self._type1
     def getType2(self):
@@ -117,7 +141,18 @@ class Mon(Item):
     def getSpe(self):
         return self._Spe
 
-
+    def getHeight(self):
+        return self._height
+    def getWeight(self):
+        return self._weight
+    def getCatchRate(self):
+        return self._catchRate
+    def getEggGroups(self):
+        return self._eggGroups
+    def getEvoList(self):
+        return self._evoList
+    def getPreEvo(self):
+        return self._preEvo
 
 # inID = int(input("enter id: "))
 # #print(pb.pokemon(inID).name)
@@ -148,17 +183,23 @@ class Mon(Item):
 # for i in statChanges:
 #     print(i)
 
-myMon = Mon('mon', 907)
-type1 = myMon.getType1()
-type2 = myMon.getType2()
-HP = myMon.getHP()
-Atk = myMon.getAtk()
-Def = myMon.getDef()
-SpA = myMon.getSpA()
-SpD = myMon.getSpD()
-Spe = myMon.getSpe()
-BST = myMon.getBST()
-stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
-print(type1)
-print(type2)
-print(stats)
+myMon = Mon('mon', 840)
+# type1 = myMon.getType1()
+# type2 = myMon.getType2()
+# HP = myMon.getHP()
+# Atk = myMon.getAtk()
+# Def = myMon.getDef()
+# SpA = myMon.getSpA()
+# SpD = myMon.getSpD()
+# Spe = myMon.getSpe()
+# BST = myMon.getBST()
+# stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
+evoList = myMon.getEvoList()
+preEvo = myMon.getPreEvo()
+name = myMon.getName()
+# print(type1)
+# print(type2)
+# print(stats)
+print(name)
+print(evoList)
+print(preEvo)
