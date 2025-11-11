@@ -25,7 +25,7 @@ class Item:
             langDict = {1:1, 2:1, 3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
             self._name = pb.pokemon(id).name
             self._gen = pb.pokemon_species(self._name).generation.id
-            self._flavorText = (pb.pokemon_species.flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")
+            self._flavorText = (pb.pokemon_species(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")
 
         elif self._itemGroup == 'move': #for Move class
             langDict = {1:6, 2:6, 3:0, 4:0, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
@@ -73,10 +73,49 @@ class Move(Item):
     def getStatChanges(self):
         return self._statChanges
 
-# class Mon(Item):
-#     def __init__(self, itemGroup, id):
-#         super().__init__(itemGroup, id)
-#         self._species = pb.genera(id).genus
+class Mon(Item):
+    def __init__(self, itemGroup, id):
+        super().__init__(itemGroup, id)
+        self._species = pb.pokemon_species(id).genera[0]
+        self._type1 = pb.pokemon(id).types[0].type.name
+        try:
+            self._type2 = pb.pokemon(id).types[1].type.name
+        except:
+            self._type2 = -1
+        self._height = pb.pokemon(id).height
+        self._weight = (pb.pokemon(id).weight)/10
+
+        self._HP = pb.pokemon(id).stats[0].base_stat
+        self._Atk = pb.pokemon(id).stats[1].base_stat
+        self._Def = pb.pokemon(id).stats[2].base_stat
+        self._SpA = pb.pokemon(id).stats[3].base_stat
+        self._SpD = pb.pokemon(id).stats[4].base_stat
+        self._Spe = pb.pokemon(id).stats[5].base_stat
+        self._BST = self._HP+self._Atk+self._Def+self._SpA+self._SpD+self._Spe
+
+        self._catchRate = pb.pokemon_species(id).capture_rate
+        self._eggGroups = pb.pokemon
+
+    
+
+    def getType1(self):
+        return self._type1
+    def getType2(self):
+        return self._type2
+    def getBST(self):
+        return self._BST
+    def getHP(self):
+        return self._HP
+    def getAtk(self):
+        return self._Atk
+    def getDef(self):
+        return self._Def
+    def getSpA(self):
+        return self._SpA
+    def getSpD(self):
+        return self._SpD
+    def getSpe(self):
+        return self._Spe
 
 
 
@@ -98,13 +137,28 @@ class Move(Item):
 #     if itemType == 'mon':
 #         myMon = Mon
 
-myItem = Move('move', 370)
-name = myItem.getItemName()
-flavorText = myItem.getFlavorText()
-generation = myItem.getItemGen()
-statChanges = myItem.getStatChanges()
-print(name)
-print(flavorText)
-print(generation)
-for i in statChanges:
-    print(i)
+# myItem = Move('move', 370)
+# name = myItem.getItemName()
+# flavorText = myItem.getFlavorText()
+# generation = myItem.getItemGen()
+# statChanges = myItem.getStatChanges()
+# print(name)
+# print(flavorText)
+# print(generation)
+# for i in statChanges:
+#     print(i)
+
+myMon = Mon('mon', 907)
+type1 = myMon.getType1()
+type2 = myMon.getType2()
+HP = myMon.getHP()
+Atk = myMon.getAtk()
+Def = myMon.getDef()
+SpA = myMon.getSpA()
+SpD = myMon.getSpD()
+Spe = myMon.getSpe()
+BST = myMon.getBST()
+stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
+print(type1)
+print(type2)
+print(stats)
