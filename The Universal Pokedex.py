@@ -15,8 +15,11 @@ from ctypes import windll
 
 
 
+#---------Item Class---------#
 class Item:
     def __init__(self, itemGroup, id):
+
+        ##---------Attributes---------##
         validGen = False
         self._itemGroup = itemGroup
         self._id = id
@@ -39,7 +42,7 @@ class Item:
             self._gen = pb.ability(self._name).generation.id
             self._flavorText = (pb.ability(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")
             
-    
+    ##---------Methods---------#
     def getItemGroup(self):
         return self._itemGroup
     def getItemName(self):
@@ -51,12 +54,16 @@ class Item:
     def getFlavorText(self):
         return self._flavorText
 
+#---------Ability Class---------#
 class Ability(Item):
     def __init__(self, itemGroup, id):
         super().__init__(itemGroup, id)
 
+#---------Move Class---------#
 class Move(Item):
     def __init__(self, itemGroup, id):
+
+        ##---------Attributes---------##
         super().__init__(itemGroup, id)
         self._accuracy = pb.move(id).accuracy
         self._effectChance = pb.move(id).accuracy
@@ -67,23 +74,27 @@ class Move(Item):
         self._target = pb.move(id).target
         self._moveType = pb.move(id).type
 
+        
         ### sort out statChanges output
         self._statChanges = {'attack':0, 'defense':0, 'special-attack':0, 'special-defense':0, 'speed':0}
         for s in range(len(pb.move(id).stat_changes)):
             self._statChanges[pb.move(id).stat_changes[s].stat] = pb.move(id).stat_changes[s].change
 
+    ##---------Methods---------##
     def getStatChanges(self):
         return self._statChanges
 
+#---------Pokémon Class---------#
 class Mon(Item):
     def __init__(self, itemGroup, id):
+
+        ##---------Attributes---------##
         super().__init__(itemGroup, id)
-        self._name = pb.pokemon_species(id).name
         self._species = pb.pokemon_species(id).genera[0]
         self._type1 = pb.pokemon(id).types[0].type.name
         try:
             self._type2 = pb.pokemon(id).types[1].type.name
-        except IndexError:
+        except IndexError:  ###if pokemon has only one type
             self._type2 = -1
         self._height = pb.pokemon(id).height
         self._weight = (pb.pokemon(id).weight)/10
@@ -103,24 +114,26 @@ class Mon(Item):
         self._gender = pb.pokemon_species(id).gender_rate
         self._eggCycle = pb.pokemon_species(id).hatch_counter
         self._evoChainID = pb.pokemon_species(id).evolution_chain.id
-        self._evoList = []
-        self._evoList.append(pb.evolution_chain(self._evoChainID).chain.species.name)
+        self._evoList = []  ###first sublist is base of evolution chain, all subsequent sublists represent a branch of the evolution chain
+        self._evoList.append([pb.evolution_chain(self._evoChainID).chain.species.name])
         for i in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to)):
-            self._evoList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].species.name)
-        try:
-            for j in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].evolves_to)):
-                self._evoList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].evolves_to[j].species.name)
-        except:
-            pass
-
+            evoBranchList = []
+            evoBranchList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].species.name)
+            try:
+                for j in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].evolves_to)):
+                    evoBranchList.append(pb.evolution_chain(self._evoChainID).chain.evolves_to[i].evolves_to[j].species.name)
+            except: ###to prevent program crashing
+                pass
+            self._evoList.append(evoBranchList)
         try:
             self._preEvo = pb.pokemon_species(id).evolves_from_species.name
         except AttributeError:
             self._preEvo = -1
-    
-    ##----Methods----##
-    def getName(self):
-        return self._name
+        self._location = []
+        self._location.append(pb.location)
+    ##---------Methods---------##
+    # def getName(self):
+    #     return self._name
     def getSpecies(self):
         return self._species
     def getType1(self):
@@ -184,7 +197,8 @@ class Mon(Item):
 # for i in statChanges:
 #     print(i)
 
-myMon = Mon('mon', 1019)
+monID = int(input("Enter Pokémon ID: "))
+myMon = Mon('mon', monID)
 type1 = myMon.getType1()
 type2 = myMon.getType2()
 HP = myMon.getHP()
@@ -197,7 +211,7 @@ BST = myMon.getBST()
 stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
 evoList = myMon.getEvoList()
 preEvo = myMon.getPreEvo()
-name = myMon.getName()
+name = myMon.getItemName()
 
 print('Name: ' + name)
 print('Type 1: ', type1)
