@@ -10,11 +10,6 @@ from PIL import Image, ImageTk
 from ctypes import windll
 #-----------------------------------------------------#
 
-#def Main():
-
-
-
-
 #---------Item Class---------#
 class Item:
     def __init__(self, itemGroup, id):
@@ -26,23 +21,24 @@ class Item:
         
         if self._itemGroup == 'mon':    #for Mon class
             langDict = {1:1, 2:1, 3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
-            self._name = pb.pokemon(id).name
-            self._gen = pb.pokemon_species(self._name).generation.id
-            self._flavorText = (pb.pokemon_species(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")
+            self._name = pb.pokemon(id).name    ##name of pokemon
+            self._gen = pb.pokemon_species(id).generation.id    ##generation introduced
+            self._flavorText = (pb.pokemon_species(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ") ##pokemon flavor text
 
         elif self._itemGroup == 'move': #for Move class
             langDict = {1:6, 2:6, 3:0, 4:0, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
-            self._name = pb.move(id).name
-            self._gen = pb.move(self._name).generation.id
-            self._flavorText = (pb.move(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")
+            self._name = pb.move(id).name   ##name of move
+            self._gen = pb.move(self._name).generation.id   ##generation introduced
+            self._flavorText = (pb.move(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")    ##move flavor text
 
         elif self._itemGroup == 'ability':  #for Ability class
             langDict = {3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:1}   #gen : english index
-            self._name = pb.ability(id).name
-            self._gen = pb.ability(self._name).generation.id
-            self._flavorText = (pb.ability(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ")
+            self._name = pb.ability(id).name    ##name of ability
+            self._gen = pb.ability(self._name).generation.id    ##generation introduced
+            self._flavorText = (pb.ability(id).flavor_text_entries[langDict[self._gen]].flavor_text).replace("\n", " ") ##ability flavor text
             
     ##---------Methods---------#
+    ##getter methods
     def getItemGroup(self):
         return self._itemGroup
     def getItemName(self):
@@ -65,22 +61,36 @@ class Move(Item):
 
         ##---------Attributes---------##
         super().__init__(itemGroup, id)
-        self._accuracy = pb.move(id).accuracy
-        self._effectChance = pb.move(id).accuracy
-        self._PP = pb.move(id).pp
-        self._priority = pb.move(id).priority
-        self._power = pb.move(id).power
-        self._dmgClass = pb.move(id).damage_class
-        self._target = pb.move(id).target
-        self._moveType = pb.move(id).type
-
-        
-        ### sort out statChanges output
-        self._statChanges = {'attack':0, 'defense':0, 'special-attack':0, 'special-defense':0, 'speed':0}
+        self._accuracy = pb.move(id).accuracy   ##percentage of success
+        self._effectChance = pb.move(id).effect_chance  ##percentage of effect success
+        self._PP = pb.move(id).pp   ##power points, number of times move can be used
+        self._priority = pb.move(id).priority   ##value between -8 and 8 determining the order of move execution
+        self._power = pb.move(id).power ##base power of move
+        self._dmgClass = pb.move(id).damage_class   ##type of damage the move inflicts
+        self._target = pb.move(id).target   ##type of target that will receive the effect of the move
+        self._moveType = pb.move(id).type   ##elemental type of the move
+        self._statChanges = {}   ##stats the moves affects and how much it affects them
         for s in range(len(pb.move(id).stat_changes)):
-            self._statChanges[pb.move(id).stat_changes[s].stat] = pb.move(id).stat_changes[s].change
+            self._statChanges[pb.move(id).stat_changes[s].stat.name] = pb.move(id).stat_changes[s].change
 
     ##---------Methods---------##
+    ##getter methods
+    def getAccuracy(self):
+        return self._accuracy
+    def getEffectChance(self):
+        return self._effectChance
+    def getPP(self):
+        return self._PP
+    def getPriority(self):
+        return self._priority
+    def getPower(self):
+        return self._power
+    def getDmgClass(self):
+        return self._dmgClass
+    def getTarget(self):
+        return self._target
+    def getType(self):
+        return self._moveType
     def getStatChanges(self):
         return self._statChanges
 
@@ -114,6 +124,7 @@ class Mon(Item):
         self._gender = pb.pokemon_species(id).gender_rate
         self._eggCycle = pb.pokemon_species(id).hatch_counter
         self._evoChainID = pb.pokemon_species(id).evolution_chain.id
+
         self._evoList = []  ###first sublist is base of evolution chain, all subsequent sublists represent a branch of the evolution chain
         self._evoList.append([pb.evolution_chain(self._evoChainID).chain.species.name])
         for i in range(len(pb.evolution_chain(self._evoChainID).chain.evolves_to)):
@@ -127,13 +138,14 @@ class Mon(Item):
             self._evoList.append(evoBranchList)
         try:
             self._preEvo = pb.pokemon_species(id).evolves_from_species.name
-        except AttributeError:
+        except AttributeError:  ###to show pokemon has no pre-evolution
             self._preEvo = -1
-        self._location = []
-        self._location.append(pb.location)
+
+        self._locations = []
+        for j in range(len(pb.pokemon(id).location_area_encounters)):
+            self._locations.append(pb.pokemon(id).location_area_encounters[j].location_area.name)
+
     ##---------Methods---------##
-    # def getName(self):
-    #     return self._name
     def getSpecies(self):
         return self._species
     def getType1(self):
@@ -167,55 +179,83 @@ class Mon(Item):
         return self._evoList
     def getPreEvo(self):
         return self._preEvo
+    def getLocations(self):
+        return self._locations
 
-# inID = int(input("enter id: "))
-# #print(pb.pokemon(inID).name)
-# #print((pb.pokemon_species(inID).flavor_text_entries[0].flavor_text).replace("\n", " "))
+def menu():
+    userIn = int(input("[0]: Pokémon Details\n[1]: Move Details\n[2]: Ability Details\nEnter Option:"))
+    if userIn == 0:
+        outMon()
+    elif userIn == 1:
+        outMove()
+    elif userIn == 2:
+        outAbility()
 
-# print(pb.move(inID).name)
-# print((pb.move(inID).flavor_text_entries[0].flavor_text).replace("\n", " "))
-# for i in range(len(pb.move(inID).stat_changes)):
-#     print(pb.move(inID).stat_changes[i].stat)
-#     print(pb.move(inID).stat_changes[i].change)
+def outMon():
+    monID = int(input("Enter Pokémon ID: "))
+    myMon = Mon('mon', monID)
+    type1 = myMon.getType1()
+    type2 = myMon.getType2()
+    HP = myMon.getHP()
+    Atk = myMon.getAtk()
+    Def = myMon.getDef()
+    SpA = myMon.getSpA()
+    SpD = myMon.getSpD()
+    Spe = myMon.getSpe()
+    BST = myMon.getBST()
+    stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
+    evoList = myMon.getEvoList()
+    preEvo = myMon.getPreEvo()
+    name = myMon.getItemName()
+    locations = myMon.getLocations()
 
-#print(pb.ability(inID).name)
-#print((pb.ability(inID).flavor_text_entries[1].flavor_text).replace("\n", " "))
+    print('Name: ' + name)
+    print('Type 1: ', type1)
+    print('Type 2: ', type2)
+    print('Stats [BST, HP, Atk, Def, SpA, SpD, Spe]: ', stats)
+    print('Evolution Chain: ', evoList)
+    print('Pre-Evolution: ', preEvo)
+    print('Locations: ', locations)
 
-# def itemInfo():
-#     itemType = input("Enter Item Type: ")
-#     if itemType == 'mon':
-#         myMon = Mon
+def outMove():
+    moveID = int(input("Enter Move ID: "))
+    myMove = Move('move', moveID)
+    name = myMove.getItemName()
+    flavorText = myMove.getFlavorText()
+    accuracy = myMove.getAccuracy()
+    effectChance = myMove.getEffectChance()
+    PP = myMove.getPP()
+    priority = myMove.getPriority()
+    power = myMove.getPower()
+    dmgClass = myMove.getDmgClass()
+    target = myMove.getTarget()
+    statChanges = myMove.getStatChanges()
+    moveType = myMove.getType()
 
-# myItem = Move('move', 370)
-# name = myItem.getItemName()
-# flavorText = myItem.getFlavorText()
-# generation = myItem.getItemGen()
-# statChanges = myItem.getStatChanges()
-# print(name)
-# print(flavorText)
-# print(generation)
-# for i in statChanges:
-#     print(i)
+    print('Name: ', name)
+    print('Flavor Text: ', flavorText)
+    print('Stat Changes: ', statChanges)
+    print('Accuracy: ', accuracy)
+    print('Effect Chance: ', effectChance)
+    print('PP: ', PP)
+    print('Priority: ', priority)
+    print('Power: ', power)
+    print('Damage Class: ', dmgClass)
+    print('Target: ', target)
+    print('Type: ', moveType)
 
-monID = int(input("Enter Pokémon ID: "))
-myMon = Mon('mon', monID)
-type1 = myMon.getType1()
-type2 = myMon.getType2()
-HP = myMon.getHP()
-Atk = myMon.getAtk()
-Def = myMon.getDef()
-SpA = myMon.getSpA()
-SpD = myMon.getSpD()
-Spe = myMon.getSpe()
-BST = myMon.getBST()
-stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
-evoList = myMon.getEvoList()
-preEvo = myMon.getPreEvo()
-name = myMon.getItemName()
+def outAbility():
+    abilID = int(input("Enter Ability ID: "))
+    myAbil = Ability('ability', abilID)
+    name = myAbil.getItemName()
+    flavorText = myAbil.getFlavorText()
 
-print('Name: ' + name)
-print('Type 1: ', type1)
-print('Type 2: ', type2)
-print('Stats [BST, HP, Atk, Def, SpA, SpD, Spe]: ', stats)
-print('Evolution Chain: ', evoList)
-print('Pre-Evolution: ', preEvo)
+    print('Name: ', name)
+    print('Flavor Text: ', flavorText)
+
+def main():
+    menu()
+
+
+#--------------------------------------------#
+main()
