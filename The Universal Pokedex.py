@@ -5,7 +5,9 @@ import pokebase as pb
 import tkinter as tk
 import PIL
 import requests
+import os
 from tkinter import PhotoImage, ttk
+from tkinter.messagebox import showinfo
 from PIL import Image, ImageTk
 from ctypes import windll
 #-----------------------------------------------------#
@@ -182,6 +184,9 @@ class Mon(Item):
     def getLocations(self):
         return self._locations
 
+
+###---temporary functions for displaying Item details---###
+#display option menu
 def menu():
     userIn = int(input("[0]: Pokémon Details\n[1]: Move Details\n[2]: Ability Details\nEnter Option:"))
     if userIn == 0:
@@ -191,6 +196,7 @@ def menu():
     elif userIn == 2:
         outAbility()
 
+#display Pokemon details
 def outMon():
     monID = int(input("Enter Pokémon ID: "))
     myMon = Mon('mon', monID)
@@ -217,6 +223,7 @@ def outMon():
     print('Pre-Evolution: ', preEvo)
     print('Locations: ', locations)
 
+#display moves details
 def outMove():
     moveID = int(input("Enter Move ID: "))
     myMove = Move('move', moveID)
@@ -244,6 +251,7 @@ def outMove():
     print('Target: ', target)
     print('Type: ', moveType)
 
+#display ability details
 def outAbility():
     abilID = int(input("Enter Ability ID: "))
     myAbil = Ability('ability', abilID)
@@ -253,9 +261,108 @@ def outAbility():
     print('Name: ', name)
     print('Flavor Text: ', flavorText)
 
+#----------------------Tkinter----------------------#
+
+###--------[CONVERT TO OOP]-----------------------###
+FONT = 'Trebuchet MS'
+
+#main menu grid
+def menuGrid(root, pFont):
+    root.rowconfigure(0, weight=1)
+    root.rowconfigure(1, weight=10)
+
+    root.columnconfigure(0, weight=3)
+    root.columnconfigure(1, weight=2)
+
+    #label style
+    styleL = ttk.Style()
+    styleL.theme_use('clam')
+    styleL.configure('TLabel', background='#c0e4f6', foreground='white', borderwidth=20, font = (pFont, 40, 'bold'))
+
+    titleLabel = ttk.Label(root, text='The Universal Pokédex', anchor='center')
+    titleLabel.grid(column=0, row=0, padx=15, pady=15, columnspan=2, sticky=tk.NSEW)
+
+#main menu frames 
+def makeButtonFrame(container, pFont):
+    bgColour = '#c0e4f6'
+    fgColour = 'white'
+
+    #frame style
+    styleF = ttk.Style()
+    styleF.theme_use('clam')
+    styleF.configure('TFrame', background='#deebf7')
+
+    #button style
+    styleB = ttk.Style()
+    styleB.theme_use('clam')
+    styleB.configure('TButton', background=bgColour, foreground=fgColour, borderwidth=20, font = (pFont, 40, 'bold'))
+    styleB.map('TButton', background=[('active', '#98d9f9')])
+
+    frame = ttk.Frame(container)
+    #frame['relief'] = 'groove'
+
+    #frame grid
+    frame.rowconfigure(0, weight=1)
+    frame.rowconfigure(1, weight=1)
+    frame.rowconfigure(2, weight=1)
+    frame.columnconfigure(0, weight=1)
+
+    #buttons
+    button1 = ttk.Button(frame, text='Button The First')
+    button1.grid(row=0, sticky=tk.NSEW)
+    button2 = ttk.Button(frame, text='Button The Second')
+    button2.grid(row=1, sticky=tk.NSEW)
+    button3 = ttk.Button(frame, text='Button The Third')
+    button3.grid(row=2, sticky=tk.NSEW)
+
+    for widget in frame.winfo_children():
+        widget.grid(padx=50, pady=15)
+    
+    return frame
+
+def makeSideMenuFrame(container, pFont):
+    frame = ttk.Frame(container)
+    #frame['relief'] = 'groove'
+
+    #frame grid
+    frame.rowconfigure(0, weight=1)
+    frame.columnconfigure(0, weight=1)
+    frame.columnconfigure(1, weight=5)
+
+    return frame
+
+
+def createWindow(pFont):
+    windll.shcore.SetProcessDpiAwareness(1) #removes blur
+
+    root = tk.Tk()#creates window
+    root.title("The Universal Pokédex")#changes title of window
+    root.geometry('1280x720')
+    root.configure(background='white')
+
+    #fullscreen
+    root.attributes('-fullscreen', True)#window becomes fullscreen automatically
+    root.bind('<Escape>', lambda event: root.attributes('-fullscreen', False))#exits fullscreen if presses escape
+
+    #change icon of window
+    scriptDir = os.path.dirname(os.path.abspath(__file__))
+    iconPath = os.path.join(scriptDir, 'assets', 'pokeball-icon.ico')
+    if os.path.exists(iconPath):    
+        root.iconbitmap(iconPath)
+
+    menuGrid(root, pFont)
+    buttonFrame = makeButtonFrame(root, pFont)
+    buttonFrame.grid(column=0, row=1, sticky=tk.NSEW, padx=15, pady=15)
+    sideFrame = makeSideMenuFrame(root, pFont)
+    sideFrame.grid(column=1, row=1, sticky=tk.NSEW, padx=15, pady=15)
+
+    root.mainloop()
+
+
+
 def main():
     menu()
 
-
 #--------------------------------------------#
-main()
+#main()
+createWindow(FONT)
