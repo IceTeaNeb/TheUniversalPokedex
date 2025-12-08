@@ -373,8 +373,19 @@ class mainWindow(tk.Tk):
             self.iconbitmap(self.iconPath)
         
     def makeButtonFrame(self, container, pFont):
-        self.bgColour = '#c0e4f6'
+        self.bgColour = '#c1dbf3'
         self.fgColour = 'white'
+
+        #button icons
+        self.scriptDir = os.path.dirname(os.path.abspath(__file__))
+        self.image1Path = os.path.join(self.scriptDir, 'assets', 'pokeballMenuLight.png')
+        self.button1Icon = ImageTk.PhotoImage(Image.open(self.image1Path))
+
+        self.image2Path = os.path.join(self.scriptDir, 'assets', 'encyclopediaMenuLight.png')
+        self.button2Icon = ImageTk.PhotoImage(Image.open(self.image2Path))
+
+        self.image3Path = os.path.join(self.scriptDir, 'assets', 'teamraterMenuLight.png')
+        self.button3Icon = ImageTk.PhotoImage(Image.open(self.image3Path))
 
         #frame style
         self.styleF = ttk.Style()
@@ -385,7 +396,7 @@ class mainWindow(tk.Tk):
         self.styleB = ttk.Style()
         self.styleB.theme_use('clam')
         self.styleB.configure('TButton', background=self.bgColour, foreground=self.fgColour, borderwidth=20, font = (pFont, 40, 'bold'))
-        self.styleB.map('TButton', background=[('active', '#98d9f9')])
+        self.styleB.map('TButton', background=[('active', '#97c7f3')])
 
         self.frame = ttk.Frame(container)
         #frame['relief'] = 'groove'
@@ -397,28 +408,38 @@ class mainWindow(tk.Tk):
         self.frame.columnconfigure(0, weight=1)
 
         #buttons
-        self.button1 = ttk.Button(self.frame, text='Button The First')
+        self.button1 = ttk.Button(self.frame, text='Pokédex', image=self.button1Icon, compound=tk.LEFT)
         self.button1.grid(row=0, sticky=tk.NSEW)
 
-        self.button2 = ttk.Button(self.frame, text='Button The Second')
+        self.button2 = ttk.Button(self.frame, text='Encyclopedia', image=self.button2Icon, compound=tk.LEFT)
         self.button2.grid(row=1, sticky=tk.NSEW)
 
-        self.button3 = ttk.Button(self.frame, text='Button The Third')
+        self.button3 = ttk.Button(self.frame, text='Team Rater', image=self.button3Icon, compound=tk.LEFT)
         self.button3.grid(row=2, sticky=tk.NSEW)
 
         for widget in self.frame.winfo_children():
             widget.grid(padx=15, pady=15)
         
+        #packing button frame
         self.frame.grid(column=0, row=1, sticky=tk.NSEW, padx=15, pady=15)
 
     def makeSideMenuFrame(self, container):
         self.frame = ttk.Frame(container)
 
-        #frame grid
-        self.frame.rowconfigure(0, weight=1)
-        self.frame.columnconfigure(0, weight=1)
-        self.frame.columnconfigure(1, weight=5)
+        self.scriptDir = os.path.dirname(os.path.abspath(__file__))
+        self.typeChartIconPath = os.path.join(self.scriptDir, 'assets', 'typechartIconLight_resized.png')
+        self.typeChartIconImage = ImageTk.PhotoImage(Image.open(self.typeChartIconPath))
+        # self.typeChartPath = os.path.join(self.scriptDir, 'assets', 'typechart_resized.png')
+        # self.typeChartImage = ImageTk.PhotoImage(Image.open(self.typeChartPath))
 
+        self.Button = ttk.Button(self.frame, text='Type Chart', image=self.typeChartIconImage, compound=tk.TOP)
+        self.Button.grid(column=0, row=0, sticky=tk.NSEW, padx=15, pady=15)
+
+        #frame grid
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(0, weight=1)
+
+        #packing side menu frame
         self.frame.grid(column=1, row=1, sticky=tk.NSEW, padx=15, pady=15)
 
     def makeMenuGrid(self, pOptions):
@@ -427,7 +448,7 @@ class mainWindow(tk.Tk):
 
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=10)
-        self.columnconfigure(0, weight=7)
+        self.columnconfigure(0, weight=10)
         self.columnconfigure(1, weight=5)
 
         #label style
@@ -439,13 +460,9 @@ class mainWindow(tk.Tk):
         self.titleLabel.grid(**titleOptions)
 
     
-
-        
-
-
 #--------------------------------------------#
 FONT = 'Trebuchet MS'
-widgetOptions = {'background':'#c0e4f6', 'foreground': 'white', 'font': (FONT, 40, 'bold')}
+widgetOptions = {'background':'#c1dbf3', 'foreground': 'white', 'font': (FONT, 40, 'bold')}
 
 if __name__ == '__main__':
     mainWin = mainWindow()
