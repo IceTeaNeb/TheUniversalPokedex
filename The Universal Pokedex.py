@@ -261,11 +261,14 @@ def outAbility():
     print('Name: ', name)
     print('Flavor Text: ', flavorText)
 
-#----------------------Tkinter----------------------#
+#------------------------------------------Tkinter-------------------------------------------#
 
 class mainWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
+
+        self.FONT = 'Trebuchet MS'
+        self.widgetOptions = {'background':'#c1dbf3', 'foreground': 'white', 'font': (self.FONT, 40, 'bold')}
 
         self.title('The Universal Pokédex')
         self.geometry('1280x780')
@@ -280,21 +283,10 @@ class mainWindow(tk.Tk):
         self.iconPath = os.path.join(self.scriptDir, 'assets', 'pokeball-icon.ico')
         if os.path.exists(self.iconPath):    
             self.iconbitmap(self.iconPath)
-
-    def makeButtonFrame(self, container, pFont):
+        
+        #widget colours
         self.bgColour = '#c1dbf3'
-        self.fgColour = 'white'
-
-        #button icons
-        self.scriptDir = os.path.dirname(os.path.abspath(__file__))
-        self.image1Path = os.path.join(self.scriptDir, 'assets', 'pokeballMenuLight.png')
-        self.button1Icon = ImageTk.PhotoImage(Image.open(self.image1Path))
-
-        self.image2Path = os.path.join(self.scriptDir, 'assets', 'encyclopediaMenuLight.png')
-        self.button2Icon = ImageTk.PhotoImage(Image.open(self.image2Path))
-
-        self.image3Path = os.path.join(self.scriptDir, 'assets', 'teamraterMenuLight.png')
-        self.button3Icon = ImageTk.PhotoImage(Image.open(self.image3Path))
+        self.fgColour = '#ffffff'
 
         #frame style
         self.styleF = ttk.Style()
@@ -304,11 +296,46 @@ class mainWindow(tk.Tk):
         #button style
         self.styleB = ttk.Style()
         self.styleB.theme_use('clam')
-        self.styleB.configure('TButton', background=self.bgColour, foreground=self.fgColour, borderwidth=20, font = (pFont, 40, 'bold'))
+        self.styleB.configure('TButton', background=self.bgColour, foreground=self.fgColour, borderwidth=20, font = (self.FONT, 35, 'bold'))
         self.styleB.map('TButton', background=[('active', '#97c7f3')])
 
-        self.frame = ttk.Frame(container)
-        #frame['relief'] = 'groove'
+        #label style
+        self.styleL = ttk.Style()
+        self.styleL.theme_use('clam')
+        self.styleL.configure('TLabel', **self.widgetOptions)
+
+    def sideIconPath(self):
+        self.imageBallPath = os.path.join(self.scriptDir, 'assets\icons', 'pokeballIconLightSmall.png')
+        self.buttonBallIcon = ImageTk.PhotoImage(Image.open(self.imageBallPath))
+
+        self.imageBookPath = os.path.join(self.scriptDir, 'assets\icons', 'encyclopediaIconLightSmall.png')
+        self.buttonBookIcon = ImageTk.PhotoImage(Image.open(self.imageBookPath))
+
+        self.imageArrowPath = os.path.join(self.scriptDir, 'assets\icons', 'teamraterIconLightSmall.png')
+        self.buttonArrowIcon = ImageTk.PhotoImage(Image.open(self.imageArrowPath))
+
+        self.imageChartPath = os.path.join(self.scriptDir, 'assets\icons', 'typechartIconLight.png')
+        self.buttonChartIcon = ImageTk.PhotoImage(Image.open(self.imageChartPath))
+
+        self.imageHousePath = os.path.join(self.scriptDir, 'assets\icons', 'menuIconLight.png')
+        self.buttonHouseIcon = ImageTk.PhotoImage(Image.open(self.imageHousePath))
+
+        self.imageExitPath = os.path.join(self.scriptDir, 'assets\icons', 'exitIconLight.png')
+        self.buttonExitIcon = ImageTk.PhotoImage(Image.open(self.imageExitPath))
+
+    def makeButtonFrame(self):
+        #button icons
+        self.scriptDir = os.path.dirname(os.path.abspath(__file__))
+        self.image1Path = os.path.join(self.scriptDir, 'assets\icons', 'pokeballIconLight.png')
+        self.button1Icon = ImageTk.PhotoImage(Image.open(self.image1Path))
+
+        self.image2Path = os.path.join(self.scriptDir, 'assets\icons', 'encyclopediaIconLight.png')
+        self.button2Icon = ImageTk.PhotoImage(Image.open(self.image2Path))
+
+        self.image3Path = os.path.join(self.scriptDir, 'assets\icons', 'teamraterIconLight.png')
+        self.button3Icon = ImageTk.PhotoImage(Image.open(self.image3Path))
+
+        self.frame = ttk.Frame(self)
 
         #frame grid
         self.frame.rowconfigure(0, weight=1)
@@ -317,7 +344,7 @@ class mainWindow(tk.Tk):
         self.frame.columnconfigure(0, weight=1)
 
         #buttons
-        self.button1 = ttk.Button(self.frame, text='Pokédex', image=self.button1Icon, compound=tk.LEFT)
+        self.button1 = ttk.Button(self.frame, text='Pokédex', image=self.button1Icon, compound=tk.LEFT, command=self.showPokedexScreen)
         self.button1.grid(row=0, sticky=tk.NSEW)
 
         self.button2 = ttk.Button(self.frame, text='Encyclopedia', image=self.button2Icon, compound=tk.LEFT)
@@ -336,10 +363,10 @@ class mainWindow(tk.Tk):
         self.frame = ttk.Frame(container)
 
         self.scriptDir = os.path.dirname(os.path.abspath(__file__))
-        self.typeChartIconPath = os.path.join(self.scriptDir, 'assets', 'typeChartIconLight_resized.png')
+        self.typeChartIconPath = os.path.join(self.scriptDir, 'assets\icons', 'typechartIconLight_resized - Copy.png')
         self.typeChartIconImage = ImageTk.PhotoImage(Image.open(self.typeChartIconPath))
 
-        self.Button = ttk.Button(self.frame, text='Type Chart', image=self.typeChartIconImage, compound=tk.TOP, command=self.showTypeChart)
+        self.Button = ttk.Button(self.frame, text='Type Chart', image=self.typeChartIconImage, compound=tk.TOP, command=self.showTypeChartScreen)
         self.Button.grid(column=0, row=0, sticky=tk.NSEW, padx=15, pady=15)
 
         #frame grid
@@ -349,66 +376,139 @@ class mainWindow(tk.Tk):
         #packing side menu frame
         self.frame.grid(column=1, row=1, sticky=tk.NSEW, padx=15, pady=15)
 
-    def makeMenuGrid(self, pOptions):
-        options = pOptions
+    def makeMenuGrid(self):
         titleOptions = {'column': 0, 'row': 0, 'padx': 15, 'pady': 15, 'columnspan': 2, 'sticky': tk.NSEW}
 
-        self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=10)
+        self.rowconfigure(0, weight=2)
+        self.rowconfigure(1, weight=12)
         self.columnconfigure(0, weight=10)
         self.columnconfigure(1, weight=5)
-
-        #label style
-        self.styleL = ttk.Style()
-        self.styleL.theme_use('clam')
-        self.styleL.configure('TLabel', **options)
 
         self.titleLabel = ttk.Label(self, text='The Universal Pokédex', anchor='center')
         self.titleLabel.grid(**titleOptions)
 
-    def typeChart(self, container, pOptions):
-        options = pOptions
-        titleOptions = {'column': 0, 'row': 0, 'padx': 15, 'pady': 15, 'columnspan': 2, 'sticky': tk.NSEW}
-
+    def secondaryScreen(self):
+        #make window grid
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=10)
+        self.rowconfigure(1, weight=20)
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=30)
 
-        self.frame = ttk.Frame(container)
+        #create frames
+        self.mainFrame = ttk.Frame(self)
+        self.mainFrame.grid(row=1, column=1, sticky=tk.NSEW, padx=15, pady=15)
+        self.mainFrame.rowconfigure(0, weight=1)
+        self.mainFrame.rowconfigure(1, weight=2)
+        self.mainFrame.rowconfigure(2, weight=10)
 
+        self.sideFrame = ttk.Frame(self)
+        self.sideFrame.grid(row=0, column=0, rowspan=2, sticky=tk.NSEW, padx=15, pady=15)
+        self.sideFrame.rowconfigure(0, weight=2)
+        for i in range(1, 4):
+            self.sideFrame.rowconfigure(i, weight=4)
+        self.sideFrame.rowconfigure(4, weight=2)
+        self.sideFrame.columnconfigure(0, weight=1)
+
+    def typeChartScreen(self):
+        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.NSEW}
+
+        #image paths
         self.scriptDir = os.path.dirname(os.path.abspath(__file__))
-        self.typeChartPath = os.path.join(self.scriptDir, 'assets', 'pokemon-type-chart1.png')
+        self.typeChartPath = os.path.join(self.scriptDir, 'assets\chart', 'pokemon-type-chart2.png')
         self.typeChartImage = ImageTk.PhotoImage(Image.open(self.typeChartPath))
 
-        #label style
-        self.styleL = ttk.Style()
-        self.styleL.theme_use('clam')
-        self.styleL.configure('TLabel', **options)
+        self.typeChartKeyPath = os.path.join(self.scriptDir, 'assets\chart', 'pokemon-type-chart-key.png')
+        self.typeChartKeyImage = ImageTk.PhotoImage(Image.open(self.typeChartKeyPath))
 
-        self.titleLabel = ttk.Label(self.frame, text='Type Chart', anchor='center')
+        self.typeChartLegendPath = os.path.join(self.scriptDir, 'assets\chart', 'pokemon-type-chart-legend.png')
+        self.typeChartLegendImage = ImageTk.PhotoImage(Image.open(self.typeChartLegendPath))
+
+        self.secondaryScreen()
+        for i in range(2, 5):
+            self.rowconfigure(i, weight=0)
+
+        #title label
+        self.titleLabel = ttk.Label(self, text='Type Chart', anchor='center')
         self.titleLabel.grid(**titleOptions)
+
+        #create side frame buttons
+        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonBallIcon, compound=tk.LEFT, command=self.showPokedexScreen)
+        self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
+
+        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonBookIcon, compound=tk.LEFT)
+        self.buttonEncyc.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
+
+        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonArrowIcon, compound=tk.LEFT)
+        self.buttonTeam.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+
+        #type chart image
+        self.chartLabel = ttk.Label(self.mainFrame, image=self.typeChartImage, anchor='center')
+        self.chartLabel.grid(column=0, row=2, padx=15, pady=15, sticky=tk.NSEW)
+
+        #return to main menu button
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonHouseIcon, compound=tk.LEFT, command=self.showMainMenu)
+        self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
+
+        #exit program button
+        self.exitButton = ttk.Button(self.sideFrame, text='Exit Program', image=self.buttonExitIcon, compound=tk.LEFT, command=self.destroy)
+        self.exitButton.grid(column=0, row=4, sticky=tk.NSEW, padx=15, pady=15)
+
+
+    def pokedexScreen(self):
+        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.NSEW}
+
+        self.secondaryScreen()
+
+        #title label
+        self.titleLabel = ttk.Label(self, text='Pokédex', anchor='center')
+        self.titleLabel.grid(**titleOptions)
+
+        #create side frame buttons
+        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonBookIcon, compound=tk.LEFT)
+        self.buttonEncyc.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
+
+        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonArrowIcon, compound=tk.LEFT)
+        self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
+
+        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen)
+        self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+
+        #return to main menu button
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonHouseIcon, compound=tk.LEFT, command=self.showMainMenu)
+        self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
+
+        #exit program button
+        self.exitButton = ttk.Button(self.sideFrame, text='Exit Program', image=self.buttonExitIcon, compound=tk.LEFT, command=self.destroy)
+        self.exitButton.grid(column=0, row=4, sticky=tk.NSEW, padx=15, pady=15)
+
 
     def clearWindow(self):
         for widget in self.winfo_children():
             widget.destroy()
 
-    def showTypeChart(self):
+    def showTypeChartScreen(self):
         self.clearWindow()
-        self.typeChart()
+        self.typeChartScreen()
+
+    def showPokedexScreen(self):
+        self.clearWindow()
+        self.pokedexScreen()
+
+    def showMainMenu(self):
+        self.clearWindow()
+        self.makeMenuGrid()
+        self.makeButtonFrame()
+        self.makeSideMenuFrame(self)
+        self.sideIconPath()
+
 
 
 
 
     
 #--------------------------------------------#
-FONT = 'Trebuchet MS'
-widgetOptions = {'background':'#c1dbf3', 'foreground': 'white', 'font': (FONT, 40, 'bold')}
-
 if __name__ == '__main__':
     mainWin = mainWindow()
-    mainGrid = mainWin.makeMenuGrid(widgetOptions)
-    buttonFrame = mainWin.makeButtonFrame(mainGrid, FONT)
-    sideFrame = mainWin.makeSideMenuFrame(mainWin)
+    mainWin.showMainMenu()
 
     mainWin.mainloop()
