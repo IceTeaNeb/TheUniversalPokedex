@@ -1,25 +1,57 @@
 #The Universal Pokédex - User Interface
 
 #-------------------imports--------------------#
+import TUPitems
+import TUPdatabase
 import tkinter as tk
 import os
+import requests
+import threading
+import sqlite3
 from tkinter import PhotoImage, ttk
 from tkinter.messagebox import showinfo
 from PIL import Image, ImageTk
 from ctypes import windll
+from io import BytesIO
+
 
 
 #------------------------------------------Tkinter-------------------------------------------#
 class mainWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-
-        self.FONT = 'Trebuchet MS'
-        self.widgetOptions = {'background':'#c1dbf3', 'foreground': 'white', 'font': (self.FONT, 40, 'bold')}
-
         self.title('The Universal Pokédex')
         self.geometry('1280x780')
-        self.configure(background='white')
+        self.configure(background='#ffffff')
+
+        self.currentUserID = None
+
+        #default colour is light blue
+        self.colours = {'bgcolor': '#c1dbf3', 'fgcolor': '#ffffff', 'activecolor': '#97c7f3', 'framecolor': '#deebf7', 'darkcolor': '#d9d9d9'}
+
+        #light red colour
+        def lightRedMode():
+            self.colours['bgcolor'] = '#ff7171'
+            self.colours['fgcolor'] = '#ffffff'
+            self.colours['activecolor'] = '#ff5252'
+            self.colours['framecolor'] = '#ffabab'
+            self.colours['darkcolor'] = '#d9d9d9'
+            #self.configure(background='#ffc8c8')          
+
+        #dark blue colour
+        def darkBlueMode():
+            self.colours['bgcolor'] = '#7f7f7f'
+            self.colours['fgcolor'] = '#ffffff'
+            self.colours['activecolor'] = '#595959'
+            self.colours['framecolor'] = '#404040'
+            self.colours['darkcolor'] = '#232323'
+            self.configure(background='#232323')
+        
+        #lightRedMode()
+        darkBlueMode()
+
+        self.FONT = 'Trebuchet MS'
+        self.widgetOptions = {'background': self.colours['bgcolor'], 'foreground': self.colours['fgcolor'], 'font': (self.FONT, 40, 'bold')}
 
         #fullscreen
         self.attributes('-fullscreen', True) #window becomes fullscreen automatically
@@ -31,122 +63,117 @@ class mainWindow(tk.Tk):
         if os.path.exists(self.iconPath):    
             self.iconbitmap(self.iconPath)
         
-        #widget colours
-        self.bgColour = '#c1dbf3'
-        self.fgColour = '#ffffff'
-
         #frame styles
         self.styleF = ttk.Style()
         self.styleF.theme_use('clam')
-        self.styleF.configure('TFrame', background='#deebf7')
+        self.styleF.configure('TFrame', background=self.colours['framecolor'])
 
         #button styles
         self.styleMainB = ttk.Style()
         self.styleMainB.theme_use('clam')
-        self.styleMainB.configure('main.TButton', background=self.bgColour, foreground=self.fgColour, font=(self.FONT, 35, 'bold'), bordercolor='#c1dbf3', darkcolor='#d9d9d9')
-        self.styleMainB.map('main.TButton', background=[('active', '#97c7f3')])
+        self.styleMainB.configure('main.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 35, 'bold'), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleMainB.map('main.TButton', background=[('active', self.colours['activecolor'])])
 
         self.styleEnterB = ttk.Style()
         self.styleEnterB.theme_use('clam')
-        self.styleEnterB.configure('enter.TButton', background=self.bgColour, foreground=self.fgColour, font=(self.FONT, 15, 'bold'), bordercolor='#c1dbf3')
-        self.styleEnterB.map('enter.TButton', background=[('active', '#97c7f3')])
+        self.styleEnterB.configure('enter.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15, 'bold'), bordercolor=self.colours['bgcolor'])
+        self.styleEnterB.map('enter.TButton', background=[('active', self.colours['activecolor'])])
+
+        self.styleSmallB = ttk.Style()
+        self.styleSmallB.theme_use('clam')
+        self.styleSmallB.configure('small.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15, 'bold'), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleSmallB.map('small.TButton', background=[('active', self.colours['activecolor'])])
 
         #progressbar styles
         self.stylePb = ttk.Style()
         self.stylePb.theme_use('clam')
-        self.stylePb.configure('TProgressbar', background='#97c7f3', troughcolor='#c1dbf3', bordercolor='#c1dbf3')
+        self.stylePb.configure('TProgressbar', background=self.colours['activecolor'], troughcolor=self.colours['bgcolor'], bordercolor=self.colours['bgcolor'])
 
         #label styles
         self.styleL = ttk.Style()
         self.styleL.theme_use('clam')
         self.styleL.configure('TLabel', **self.widgetOptions)
 
+        self.styleProgressL = ttk.Style()
+        self.styleProgressL.theme_use('clam')
+        self.styleProgressL.configure('progress.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 10, 'bold'))
+
+        self.styleSmallL = ttk.Style()
+        self.styleSmallL.theme_use('clam')
+        self.styleSmallL.configure('small.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 28, 'bold'))
+
         #entry styles
         self.styleE = ttk.Style()
         self.styleE.theme_use('clam')
-        self.styleE.configure('TEntry', fieldbackground='#c1dbf3', foreground='#ffffff', bordercolor='#c1dbf3')
+        self.styleE.configure('TEntry', fieldbackground=self.colours['bgcolor'], foreground=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
 
         #menubutton styles
         self.styleMB = ttk.Style()
         self.styleMB.theme_use('clam')
-        self.styleMB.configure('filter.TMenubutton', background=self.bgColour, foreground=self.fgColour, font=(self.FONT, 15, 'bold'), arrowcolor='#ffffff', bordercolor='#c1dbf3')
-        self.styleMB.map('filter.TMenubutton', background=[('active', '#97c7f3')])
+        self.styleMB.configure('filter.TMenubutton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15, 'bold'), arrowcolor=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
+        self.styleMB.map('filter.TMenubutton', background=[('active', self.colours['activecolor'])])
 
-    def sideIconPath(self):
-        self.imageBallPath = os.path.join(self.scriptDir, 'assets\icons', 'pokeballIconLightSmall.png')
-        self.buttonBallIcon = ImageTk.PhotoImage(Image.open(self.imageBallPath))
+        #main menu large icons
+        self.buttonMenuBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'pokeballIconLight.png')))
+        self.buttonMenuBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'encyclopediaIconLight.png')))
+        self.buttonMenuArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'teamraterIconLight.png')))
+        self.buttonMenuExitIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'exitIconLight.png')))
 
-        self.imageBookPath = os.path.join(self.scriptDir, 'assets\icons', 'encyclopediaIconLightSmall.png')
-        self.buttonBookIcon = ImageTk.PhotoImage(Image.open(self.imageBookPath))
 
-        self.imageArrowPath = os.path.join(self.scriptDir, 'assets\icons', 'teamraterIconLightSmall.png')
-        self.buttonArrowIcon = ImageTk.PhotoImage(Image.open(self.imageArrowPath))
+        #side menu small icons
+        self.buttonSideBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'pokeballIconLightSmall.png')))
+        self.buttonSideBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'encyclopediaIconLightSmall.png')))
+        self.buttonSideArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'teamraterIconLightSmall.png')))
+        self.buttonSideHouseIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'menuIconLight.png')))
+        self.buttonSideChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets/icons', 'typechartIconLight.png')))
 
-        self.imageChartPath = os.path.join(self.scriptDir, 'assets\icons', 'typechartIconLight.png')
-        self.buttonChartIcon = ImageTk.PhotoImage(Image.open(self.imageChartPath))
-
-        self.imageHousePath = os.path.join(self.scriptDir, 'assets\icons', 'menuIconLight.png')
-        self.buttonHouseIcon = ImageTk.PhotoImage(Image.open(self.imageHousePath))
-
-        self.imageExitPath = os.path.join(self.scriptDir, 'assets\icons', 'exitIconLight.png')
-        self.buttonExitIcon = ImageTk.PhotoImage(Image.open(self.imageExitPath))
+    def getSprite(self, URL, label):
+        response = requests.get(URL)
+        monImage = Image.open(BytesIO(response.content))
+        self.monSprite = ImageTk.PhotoImage(monImage)
+        self.after(0, label.configure(image=self.monSprite))
 
     def makeButtonFrame(self):
-        #button icons
-        self.scriptDir = os.path.dirname(os.path.abspath(__file__))
-        self.image1Path = os.path.join(self.scriptDir, 'assets\icons', 'pokeballIconLight.png')
-        self.button1Icon = ImageTk.PhotoImage(Image.open(self.image1Path))
-
-        self.image2Path = os.path.join(self.scriptDir, 'assets\icons', 'encyclopediaIconLight.png')
-        self.button2Icon = ImageTk.PhotoImage(Image.open(self.image2Path))
-
-        self.image3Path = os.path.join(self.scriptDir, 'assets\icons', 'teamraterIconLight.png')
-        self.button3Icon = ImageTk.PhotoImage(Image.open(self.image3Path))
-
-        self.frame = ttk.Frame(self)
+        self.mainMenuButtonFrame = ttk.Frame(self)
 
         #frame grid
-        self.frame.rowconfigure(0, weight=1)
-        self.frame.rowconfigure(1, weight=1)
-        self.frame.rowconfigure(2, weight=1)
-        self.frame.columnconfigure(0, weight=1)
+        self.mainMenuButtonFrame.rowconfigure(0, weight=1)
+        self.mainMenuButtonFrame.rowconfigure(1, weight=1)
+        self.mainMenuButtonFrame.rowconfigure(2, weight=1)
+        self.mainMenuButtonFrame.columnconfigure(0, weight=1)
 
         #buttons
-        self.button1 = ttk.Button(self.frame, text='Pokédex', image=self.button1Icon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
-        self.button1.grid(row=0, sticky=tk.NSEW)
+        self.buttonBall = ttk.Button(self.mainMenuButtonFrame, text='Pokédex', image=self.buttonMenuBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
+        self.buttonBall.grid(row=0, sticky=tk.NSEW)
 
-        self.button2 = ttk.Button(self.frame, text='Encyclopedia', image=self.button2Icon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
-        self.button2.grid(row=1, sticky=tk.NSEW)
+        self.buttonBook = ttk.Button(self.mainMenuButtonFrame, text='Encyclopedia', image=self.buttonMenuBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
+        self.buttonBook.grid(row=1, sticky=tk.NSEW)
 
-        self.button3 = ttk.Button(self.frame, text='Team Rater', image=self.button3Icon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
-        self.button3.grid(row=2, sticky=tk.NSEW)
+        self.buttonArrow = ttk.Button(self.mainMenuButtonFrame, text='Team Rater', image=self.buttonMenuArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
+        self.buttonArrow.grid(row=2, sticky=tk.NSEW)
 
-        for widget in self.frame.winfo_children():
+        for widget in self.mainMenuButtonFrame.winfo_children():
             widget.grid(padx=15, pady=15)
         
         #packing button frame
-        self.frame.grid(column=0, row=1, sticky=tk.NSEW, padx=15, pady=15)
+        self.mainMenuButtonFrame.grid(column=0, row=1, sticky=tk.NSEW, padx=15, pady=15)
 
     def makeSideMenuFrame(self, container):
-        self.frame = ttk.Frame(container)
-
-        self.scriptDir = os.path.dirname(os.path.abspath(__file__))
-        self.typeChartIconPath = os.path.join(self.scriptDir, 'assets\icons', 'typechartIconLight_resized - Copy.png')
-        self.typeChartIconImage = ImageTk.PhotoImage(Image.open(self.typeChartIconPath))
+        self.sideMenuFrame = ttk.Frame(container)
 
         #frame grid
-        self.frame.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(0, weight=10)
-        self.frame.rowconfigure(1, weight=1)
+        self.sideMenuFrame.columnconfigure(0, weight=1)
+        self.sideMenuFrame.rowconfigure(0, weight=10)
+        self.sideMenuFrame.rowconfigure(1, weight=1)
 
-        self.ButtonChart = ttk.Button(self.frame, text='Type Chart', image=self.typeChartIconImage, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
+        self.ButtonChart = ttk.Button(self.sideMenuFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
         self.ButtonChart.grid(column=0, row=0, sticky=tk.NSEW, padx=15, pady=15)
 
-        self.ButtonExit = ttk.Button(self.frame, text='Exit Program', image=self.buttonExitIcon, compound=tk.LEFT, command=self.destroy, style='main.TButton')
+        self.ButtonExit = ttk.Button(self.sideMenuFrame, text='Exit Program', image=self.buttonMenuExitIcon, compound=tk.LEFT, command=self.destroy, style='main.TButton')
         self.ButtonExit.grid(row=1, column=0, sticky=tk.NSEW, padx=15, pady=15)
 
         #packing side menu frame
-        self.frame.grid(column=1, row=1, sticky=tk.NSEW, padx=15, pady=15)
+        self.sideMenuFrame.grid(column=1, row=1, sticky=tk.NSEW, padx=15, pady=15)
 
     def makeMenuGrid(self):
         titleOptions = {'column': 0, 'row': 0, 'padx': 15, 'pady': 15, 'columnspan': 2, 'sticky': tk.NSEW}
@@ -164,7 +191,7 @@ class mainWindow(tk.Tk):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=20)
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=30)
+        self.columnconfigure(1, weight=6)
 
         #create frames
         self.mainFrame = ttk.Frame(self)
@@ -194,12 +221,12 @@ class mainWindow(tk.Tk):
 
         for i in range(1, 6):
             num=str(i)
-            self.genButton = ttk.Button(self.dexFrame, text=f'Gen {num}', style='enter.TButton', command=lambda: [self.dexFrame.destroy(), self.pokemonFrame(num)])
+            self.genButton = ttk.Button(self.dexFrame, text=f'Gen {num}', style='enter.TButton', command=lambda n=num: [self.dexFrame.destroy(), self.pokemonFrame(num)])
             self.genButton.grid(row=i, column=0, padx=15, pady=15, sticky=tk.NSEW)
 
         for i in range(1, 5):
             num=str(i+5)
-            self.genButton = ttk.Button(self.dexFrame, text=f'Gen {num}', style='enter.TButton', command=lambda: [self.dexFrame.destroy(), self.pokemonFrame(num)])
+            self.genButton = ttk.Button(self.dexFrame, text=f'Gen {num}', style='enter.TButton', command=lambda n=num: [self.dexFrame.destroy(), self.pokemonFrame(num)])
             self.genButton.grid(row=i, column=1, padx=15, pady=15, sticky=tk.NSEW)
 
         self.dexFrame.grid(row=0, column=0, rowspan=4, columnspan=5, padx=15, pady=15, sticky=tk.NSEW)
@@ -209,19 +236,24 @@ class mainWindow(tk.Tk):
 
     def pokemonFrame(self, gen):
         self.genNum = gen
-        #test label
-        self.testLabel = ttk.Label(self.mainFrame)
-        self.testLabel.grid(row=0, column=0, sticky=tk.NSEW, rowspan=4, padx=15, pady=15)
+
+        # #test label
+        # self.testLabel = ttk.Label(self.mainFrame)
+        # self.testLabel.grid(row=0, column=0, sticky=tk.NSEW, rowspan=4, padx=15, pady=15)
         
+        # # threading.Thread(target=self.getSprite, daemon=True).start()
+        # # self.spriteURL = TUPitems.getTestSpriteURL()        
+        # # self.getSprite(self.spriteURL, self.testLabel)
+
+        # self.spriteURL = TUPitems.getTestSpriteURL()
+        # threading.Thread(tar)
+
         #progress bar test buttons
-        startButton = ttk.Button(self.mainFrame, text='start', command=self.showProgressBar)
-        startButton.grid(row=3, column=1)
         stopButton = ttk.Button(self.mainFrame, text='stop', command=self.hideProgressBar)
         stopButton.grid(row=3, column=2)
 
-
         #enter button
-        self.enterButton = ttk.Button(self.mainFrame, text='Enter', style='enter.TButton')
+        self.enterButton = ttk.Button(self.mainFrame, text='Enter', style='enter.TButton', command=self.showProgressBar)
         self.enterButton.grid(row=0, column=2, sticky=tk.NSEW, pady=15)
 
         #search textbox
@@ -241,6 +273,8 @@ class mainWindow(tk.Tk):
         
         self.filterMenuButton.grid(row=1, column=1, sticky=tk.NSEW, columnspan=2)
 
+        
+
 
         # #canvas to scroll
         # self.canvas = tk.Canvas(self)
@@ -254,7 +288,7 @@ class mainWindow(tk.Tk):
 
 
     def typeChartScreen(self):
-        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.NSEW}
+        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.EW}
 
         #image paths
         self.scriptDir = os.path.dirname(os.path.abspath(__file__))
@@ -276,13 +310,13 @@ class mainWindow(tk.Tk):
         self.titleLabel.grid(**titleOptions)
 
         #create side frame buttons
-        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
+        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonSideBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
         self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
+        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
         self.buttonEncyc.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
+        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
         self.buttonTeam.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #type chart image
@@ -290,11 +324,11 @@ class mainWindow(tk.Tk):
         self.chartLabel.grid(column=0, row=2, padx=15, pady=15, sticky=tk.NSEW)
 
         #return to main menu button
-        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
         self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
 
     def pokedexScreen(self):
-        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.NSEW}
+        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.EW}
 
         self.secondaryScreen()
 
@@ -303,17 +337,17 @@ class mainWindow(tk.Tk):
         self.titleLabel.grid(**titleOptions)
 
         #create side frame buttons
-        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
+        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
         self.buttonEncyc.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
+        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
         self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen, style='main.TButton')
         self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #return to main menu button
-        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
         self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
 
         self.dexSelectFrame()
@@ -321,7 +355,7 @@ class mainWindow(tk.Tk):
         
 
     def encyclopediaScreen(self):
-        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.NSEW}
+        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.EW}
 
         self.secondaryScreen()
 
@@ -330,21 +364,21 @@ class mainWindow(tk.Tk):
         self.titleLabel.grid(**titleOptions)
 
         #create side frame buttons
-        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
+        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonSideBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
         self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
+        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.LEFT, command=self.showTeamraterScreen, style='main.TButton')
         self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen, style='main.TButton')
         self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #return to main menu button
-        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
         self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
 
     def teamraterScreen(self):
-        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.NSEW}
+        titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.EW}
 
         self.secondaryScreen()
 
@@ -353,19 +387,139 @@ class mainWindow(tk.Tk):
         self.titleLabel.grid(**titleOptions)
 
         #create side frame buttons
-        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
+        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonSideBallIcon, compound=tk.LEFT, command=self.showPokedexScreen, style='main.TButton')
         self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
+        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.LEFT, command=self.showEncyclopediaScreen, style='main.TButton')
         self.buttonEncyc.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.LEFT, command=self.showTypeChartScreen, style='main.TButton')
         self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #return to main menu button
-        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
         self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
 
+    def showLogin(self):
+        self.clearWindow()
+
+        #window grid
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=8)
+        self.rowconfigure(2, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=2)
+        self.columnconfigure(2, weight=1)
+
+        #main login frame
+        self.loginFrame = ttk.Frame(self, padding=20)
+        self.loginFrame.grid(row=1, column=0, columnspan=3, padx=30, pady=30, sticky=tk.NSEW)
+
+        #login frame grid
+        for i in range(7):
+            self.loginFrame.rowconfigure(i, weight=1)
+        self.loginFrame.columnconfigure(0, weight=2)
+        self.loginFrame.columnconfigure(1, weight=3)
+        self.loginFrame.columnconfigure(2, weight=3)
+        self.loginFrame.columnconfigure(3, weight=3)
+        self.loginFrame.columnconfigure(4, weight=2)
+
+        #login title frame
+        self.loginTitleFrame = ttk.Frame(self)
+        self.loginTitleFrame.grid(row=0, column=0, columnspan=3, sticky=tk.EW)
+
+        self.loginTitleFrame.columnconfigure(0, weight=1)
+
+        #login title label
+        self.loginTitleLabel = ttk.Label(self.loginTitleFrame, text='The Universal Pokédex', anchor='center', style='TLabel')
+        self.loginTitleLabel.grid(row=0, column=0, pady=15, sticky=tk.EW)
+
+        #username label
+        self.usernameLabel = ttk.Label(self.loginFrame, text='Username', anchor='center', style='small.TLabel')
+        self.usernameLabel.grid(row=1, column=2, padx=20, pady=(12, 2), sticky=tk.EW)
+
+        #username entry
+        self.usernameEntry = ttk.Entry(self.loginFrame, font=(self.FONT, 18))
+        self.usernameEntry.grid(row=2, column=1, columnspan=3, padx=20, pady=(2, 10), sticky=tk.EW)
+
+        #password label
+        self.passwordLabel = ttk.Label(self.loginFrame, text='Password', anchor='center', style='small.TLabel')
+        self.passwordLabel.grid(row=3, column=2, padx=20, pady=(10, 2), sticky=tk.EW)
+
+        #password entry
+        self.passwordEntry = ttk.Entry(self.loginFrame, show='•', font=(self.FONT, 18)) 
+        self.passwordEntry.grid(row=4, column=1, columnspan=3, padx=20, pady=(2, 10), sticky=tk.EW)
+
+        #error frame
+        self.loginErrorFrame = ttk.Frame(self.loginFrame)
+
+        self.loginErrorFrame.columnconfigure(0, weight=1)
+
+        #error label
+        self.loginErrorLabel = ttk.Label(self.loginErrorFrame, text='', anchor='center', style='progress.TLabel', wraplength=600)
+
+        #button frame
+        self.buttonFrame = ttk.Frame(self.loginFrame)
+        self.buttonFrame.grid(row=6, column=2, padx=5, pady=20, sticky=tk.NSEW)
+
+        self.buttonFrame.columnconfigure(0, weight=1)
+        self.buttonFrame.columnconfigure(1, weight=1)
+
+        #login button
+        self.loginButton = ttk.Button(self.buttonFrame, text='Login', style='small.TButton', command=self.tryLogin)
+        self.loginButton.grid(row=0, column=0, padx=(0, 10), sticky=tk.EW)
+
+        #register button
+        self.registerButton = ttk.Button(self.buttonFrame, text='Create Account', style='small.TButton', command=self.tryRegister)
+        self.registerButton.grid(row=0, column=1, padx=(10, 0), sticky=tk.EW)
+
+    def tryLogin(self):
+        #retrieves user input from entry widgets
+        username = self.usernameEntry.get()
+        password = self.passwordEntry.get()
+
+        #if no username or password entered
+        if not username or not password:
+            self.loginErrorLabel.config(text='Please enter a username and password')
+            self.loginErrorFrame.grid(row=5, column=0, padx=20, pady=10, sticky=tk.EW)
+            self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
+            return
+        
+        #checks login details are valid
+        success, userID = TUPdatabase.checkLogin(username, password)
+
+        if success:
+            self.currentUserID = userID
+            self.showMainMenu()
+        else:
+            self.loginErrorLabel.config(text='Invalid username or password')
+            self.loginErrorFrame.grid(row=5, column=0, padx=20, pady=10, sticky=tk.EW)
+            self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
+
+    def tryRegister(self):
+        #retrieve user input from entry widgets
+        username = self.usernameEntry.get()
+        password = self.passwordEntry.get()
+
+        #if no username or password are entered
+        if not username or not password:
+            self.loginErrorLabel.config(text='Please enter a username and password')
+            self.loginErrorFrame.grid(row=5, column=0, padx=20, pady=10, sticky=tk.EW)
+            self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
+            return
+        
+        #tries to add details to database
+        try:
+            TUPdatabase.addUser(username, password)
+            self.loginErrorLabel.config(text='Account made - Please login')
+            self.loginErrorFrame.grid(row=5, column=0, padx=20, pady=10, sticky=tk.EW)
+            self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
+        
+        #error message if username already exists
+        except sqlite3.IntegrityError:
+            self.loginErrorLabel.config(text='Username already exists')
+            self.loginErrorFrame.grid(row=5, column=0, padx=20, pady=10, sticky=tk.EW)
+            self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
 
     def clearWindow(self):
         for widget in self.winfo_children():
@@ -389,17 +543,25 @@ class mainWindow(tk.Tk):
 
     def showProgressBar(self):
         #progress bar
-        self.progressBar = ttk.Progressbar(self.mainFrame, mode='indeterminate')
-        self.progressBar.grid(row=2, column=1, sticky=tk.NSEW, padx=15, pady=15, columnspan=2)
+        self.progressBarFrame = ttk.Frame(self.mainFrame)
+        self.progressBarFrame.columnconfigure(0, weight=5)
+        self.progressBarFrame.columnconfigure(1, weight=1)
+
+        self.progressBar = ttk.Progressbar(self.progressBarFrame, mode='indeterminate')
+        self.progressBar.grid(row=0, column=0, sticky=tk.NSEW, pady=15)
+
+        self.progressBarText = ttk.Label(self.progressBarFrame, text='Loading...', style='progress.TLabel', anchor='center')
+        self.progressBarText.grid(row=0, column=1, sticky=tk.NSEW, pady=15)
+
+        self.progressBarFrame.grid(column=1, row=2, columnspan=2, sticky=tk.NSEW)
         self.progressBar.start()
 
     def hideProgressBar(self):
         self.progressBar.stop()
-        self.progressBar.destroy()
+        self.progressBarFrame.destroy()
 
     def showMainMenu(self):
         self.clearWindow()
-        self.sideIconPath()
         self.makeMenuGrid()
         self.makeButtonFrame()
         self.makeSideMenuFrame(self)

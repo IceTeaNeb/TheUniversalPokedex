@@ -3,9 +3,11 @@
 #----------------------imports----------------------#
 import TUPUI
 #import TUPitems
+import TUPdatabase
 
 #--------------------------------------------#
 if __name__ == '__main__':
+    TUPdatabase.createDatabase()
     mainWin = TUPUI.mainWindow()
-    mainWin.showMainMenu()
+    mainWin.showLogin()
     mainWin.mainloop()
