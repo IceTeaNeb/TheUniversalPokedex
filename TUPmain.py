@@ -2,7 +2,7 @@
 
 #----------------------imports----------------------#
 import TUPUI
-#import TUPitems
+import TUPitems
 import TUPdatabase
 
 #--------------------------------------------#

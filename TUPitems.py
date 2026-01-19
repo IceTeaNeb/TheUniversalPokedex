@@ -193,6 +193,10 @@ class Mon(Item):
         return self._locations
     def getMoves(self):
         return self._moves
+    def getGender(self):
+        return self._gender
+    def getEggCycle(self):
+        return self._eggCycle
     def getSpriteURL(self):
         return self._spriteURL
 
@@ -229,6 +233,7 @@ def outMon():
     name = myMon.getItemName()
     locations = myMon.getLocations()
     moves = myMon.getMoves()
+
     #sprite = myMon.getSprite()
 
 
