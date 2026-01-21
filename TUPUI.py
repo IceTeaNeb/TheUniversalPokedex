@@ -9,7 +9,7 @@ import requests
 import threading
 import sqlite3
 from tkinter import PhotoImage, ttk
-from tkinter.messagebox import showinfo
+from tkinter.messagebox import showinfo, askyesno
 from PIL import Image, ImageTk
 from ctypes import windll
 from io import BytesIO
@@ -56,8 +56,8 @@ class mainWindow(tk.Tk):
             self.colours['darkcolor'] = '#232323'
             self.configure(background='#232323')
         
-        #lightRedMode()
-        darkBlueMode()
+        lightRedMode()
+        #darkBlueMode()
         #darkRedMode()
 
         self.FONT = 'Trebuchet MS'
@@ -237,9 +237,9 @@ class mainWindow(tk.Tk):
         self.mainFrame.rowconfigure(2, weight=1)
         self.mainFrame.rowconfigure(3, weight=100)
 
-        self.mainFrame.columnconfigure(0, weight=8, minsize=400)
-        self.mainFrame.columnconfigure(1, weight=8)
-        self.mainFrame.columnconfigure(2, weight=8)
+        self.mainFrame.columnconfigure(0, weight=0)
+        self.mainFrame.columnconfigure(1, weight=0)
+        self.mainFrame.columnconfigure(2, weight=10)
         self.mainFrame.columnconfigure(3, weight=0)
 
 
@@ -273,20 +273,31 @@ class mainWindow(tk.Tk):
         self.genNum = int(gen)
         self.currentDexID = self.genNum
 
+        self.makeTitle(f'Pokédex - Gen {self.genNum}')
+
         TUPdatabase.ensureDexExists(self.currentDexID, self.genNum, "Default")
 
-        #enter button
-        self.searchButton = ttk.Button(self.mainFrame, text='Enter', style='enter.TButton', command=self.refreshPokedexResults)
-        self.searchButton.grid(row=0, column=2, sticky=tk.NSEW, pady=15)
+        #add mon button
+        self.addButton = ttk.Button(self.mainFrame, text='Add', style='enter.TButton', command=self.openAddMonPopup)
+        self.addButton.grid(row=0, column=0, sticky=tk.NSEW, pady=15)
+
+        #delete button
+        self.deleteButton = ttk.Button(self.mainFrame, text='Delete', style='enter.TButton', command=self.onDeleteSelectedMon)
+        self.deleteButton.grid(row=0, column=1, sticky=tk.NSEW, pady=15, padx=(10, 0))
+        self.deleteButton.state(["disabled"])
 
         #search entry
         self.searchEntry = ttk.Entry(self.mainFrame, font = ('Trebuchet MS', 20, 'bold'))
-        self.searchEntry.grid(row=0, column=1, sticky=tk.NSEW, pady=15)
+        self.searchEntry.grid(row=0, column=2, sticky=tk.NSEW, pady=15)
         self.searchEntry.bind('<Return>', lambda e: self.refreshPokedexResults())
+
+        #enter button
+        self.searchButton = ttk.Button(self.mainFrame, text='Enter', style='enter.TButton', command=self.refreshPokedexResults)
+        self.searchButton.grid(row=0, column=3, sticky=tk.NSEW, pady=15)
 
         #filter
         self.filtersFrame = ttk.Frame(self.mainFrame)
-        self.filtersFrame.grid(row=1, column=1, columnspan=2, sticky=tk.EW, pady=(0, 10))
+        self.filtersFrame.grid(row=1, column=2, columnspan=2, sticky=tk.EW, pady=(0, 10))
         for column in range(5):
             self.filtersFrame.columnconfigure(column, weight=1)
 
@@ -327,7 +338,7 @@ class mainWindow(tk.Tk):
 
         #scrollable area
         self.resultsOuterFrame, self.resultsCanvas, self.resultsInnerFrame = self.makeScrollableFrame(self.mainFrame)
-        self.resultsOuterFrame.grid(row=2, column=1, columnspan=2, sticky=tk.NSEW, padx=15, pady=15)
+        self.resultsOuterFrame.grid(row=2, column=2, columnspan=2, sticky=tk.NSEW, padx=15, pady=15)
 
         self.refreshPokedexResults()
 
@@ -491,7 +502,7 @@ class mainWindow(tk.Tk):
             nameLabel.grid(row=1, column=0, sticky=tk.EW)
 
             #clickable card
-            selectButton = ttk.Button(self.card, text='', style='small.TButton', command=lambda dID=dexMonID: self.showMonDetails(dID))
+            selectButton = ttk.Button(self.card, text='', style='small.TButton', command=lambda dID=dexMonID: self.onSelectMon(dID))
             selectButton.place(relx=0, rely=0, relwidth=1, relheight=1)
             selectButton.lift()
 
@@ -513,7 +524,25 @@ class mainWindow(tk.Tk):
         self.populateResultsGrid(rows)
 
         if rows:
-            self.showMonDetails(rows[0][0])
+            rowIDs = [row[0] for row in rows]
+            current = getattr(self, 'selectedDexMonID', None)
+
+            if current in rowIDs:
+                self.showMonDetails(current)
+            else:
+                self.selectedDexMonID = rows[0][0]
+                self.showMonDetails(self.selectedDexMonID)
+        
+        else:
+            self.selectedDexMonID = None
+            self.detailsNameLabel.configure(text='No results')
+            self.detailsInfoLabel.configure(text='')
+            self.detailsSpriteLabel.configure(image='')
+            self.detailsSpriteLabel.grid_remove()
+            self.detailsSpriteRef = None
+
+            if hasattr(self, "deleteButton"):
+                self.deleteButton.state(["disabled"])
     
     def loadSpriteToLabel(self, spriteURL, label, monID):
         try:
@@ -539,7 +568,7 @@ class mainWindow(tk.Tk):
             return
 
         #update labels
-        self.detailsNameLabel.configure(text=mon["MonName"])
+        self.detailsNameLabel.configure(text=mon["MonName"].title())
 
         infoText = (f'Species: {mon["Species"]}\n'
                     f'Type: {mon["Type1"]}' + (f' / {mon["Type2"]}' if mon["Type2"] else '') + '\n'
@@ -561,6 +590,14 @@ class mainWindow(tk.Tk):
             self.detailsSpriteLabel.configure(image='')
             self.detailsSpriteLabel.grid_remove()
             self.detailsSpriteRef = None
+
+    def onSelectMon(self, dexMonID):
+        self.selectedDexMonID = dexMonID
+
+        if hasattr(self, "deleteButton"):
+            self.deleteButton.state(["!disabled"])
+
+        self.showMonDetails(dexMonID)
 
     def makeFilterMenu(self, menuButton, options, variable):
         menu = tk.Menu(menuButton, tearoff=False)
@@ -596,6 +633,133 @@ class mainWindow(tk.Tk):
 
         #sprite reference
         self.detailsSpriteRef = None
+        
+    def openAddMonPopup(self):
+        statNames = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"]
+        statVars = {}
+
+        #popup window
+        popup = tk.Toplevel(self)
+        popup.title('Add Pokémon')
+        popup.transient(self)
+        popup.resizable(False, False)
+        popup.grab_set()
+
+        #add Pokémon frame
+        self.addMonFrame = ttk.Frame(popup, padding=15)
+        self.addMonFrame.grid(row=0, column=0, sticky=tk.NSEW)
+
+        #dex number label
+        self.dexNumLabel = ttk.Label(self.addMonFrame, text='Dex # or Name:', style='progress.TLabel')
+        self.dexNumLabel.grid(row=0, column=0, sticky=tk.W)
+
+        #dex number entry
+        self.dexNumEntry = ttk.Entry(self.addMonFrame, width=12)
+        self.dexNumEntry.grid(row=0, column=1, padx=(10, 0), sticky=tk.EW)
+        self.dexNumEntry.focus_set()
+
+        #custom stats label
+        self.customStatsLabel = ttk.Label(self.addMonFrame, text='Custom Stats (Optional):', style='progress.TLabel')
+        self.customStatsLabel.grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(12, 6))
+
+        for i, stat in enumerate(statNames):
+            ttk.Label(self.addMonFrame, text=f"{stat}", style='progress.TLabel').grid(row=2+i, column=0, sticky=tk.W)
+            var = tk.StringVar(value="")
+            statVars[stat] = var
+            ttk.Entry(self.addMonFrame, textvariable=var, width=12).grid(row=2+i, column=1, padx=(10, 0), sticky=tk.W)
+
+        def parseInt(text):
+            text=text.strip()
+            if text == '':
+                return None
+            else:
+                return int(text)
+            
+        def normaliseMonInput(text):
+            text = text.strip()
+            if text == '':
+                return None
+            return text.lower().replace(" ", "-")
+
+        def onAdd():
+            userIn = self.dexNumEntry.get()
+            monKey = normaliseMonInput(userIn)
+
+            if not monKey:
+                showinfo("Error", "Please enter a Dex number or Pokédex name.")
+                return
+
+            #Pokémon object
+            try:
+                if monKey.isdigit():
+                    monObj = TUPitems.Mon('mon', int(monKey), self.genNum)
+                else:
+                    monObj = TUPitems.Mon('mon', monKey, self.genNum)
+            except:
+                showinfo("Error", "Could not load that Pokémon from the API.")
+                return
+
+            try:
+                #gets details of Pokémon
+                monData = {"dexNum": monObj.getDexNum(), "monName": monObj.getItemName(), "species": str(monObj.getSpecies()),
+                        "type1": monObj.getType1().title(), "type2": None if monObj.getType2()==-1 else monObj.getType2().title(),
+                        "height": float(monObj.getHeight()), "weight": float(monObj.getWeight()), "bst": int(monObj.getBST()),
+                        "catchRate": int(monObj.getCatchRate()), "eggGroups": monObj.getEggGroups(), "gender": float(monObj.getGender()),
+                        "eggCycle": int(monObj.getEggCycle()), "evo": str(monObj.getEvoList()), "preEvo": None if monObj.getPreEvo()==-1 else monObj.getPreEvo(),
+                        "flavorText": monObj.getFlavorText(), "location": monObj.getLocations(), "spriteURL": monObj.getSpriteURL(),
+                        }
+                
+                #default is base stats
+                baseStats = {"HP": int(monObj.getHP()), "Atk": int(monObj.getAtk()), "Def": int(monObj.getDef()),
+                        "SpA": int(monObj.getSpA()), "SpD": int(monObj.getSpD()), "Spe": int(monObj.getSpe()),
+                        }
+                
+                #override base stats with custom stats
+                try:
+                    stats = {}
+                    for stat in statNames:
+                        userValue = parseInt(statVars[stat].get())
+                        if userValue is None:
+                            stats[stat] = baseStats[stat]
+                        else:
+                            stats[stat] = userValue
+                except ValueError:
+                    showinfo("Invalid stats", "Stats must be integers or left blank.")
+                    return
+                
+                TUPdatabase.addMonFull(self.currentUserID, self.currentDexID, self.genNum, monData, moves="", ability="", stats=stats)
+
+            except:
+                showinfo("Error", "Could not add Pokémon.")
+                return
+            
+            popup.destroy()
+            self.refreshPokedexResults()
+        
+        #on add button
+        self.onAddButton = ttk.Button(popup, text='Add', style='small.TButton', command=onAdd)
+        self.onAddButton.grid(row=1, column=0, columnspan=2, padx=10, pady=15, sticky=tk.EW)
+
+    def onDeleteSelectedMon(self):
+        dexMonID = getattr(self, "selectedDexMonID", None)
+        if dexMonID is None:
+            showinfo("Delete Pokémon", "No Pokémon selected.")
+            return
+        
+        mon = TUPdatabase.returnDexMon(dexMonID)
+        if mon:
+            monName = mon["MonName"]
+        else:
+            monName = 'this Pokémon'
+
+        if not askyesno("Delete Pokémon", f"Delete {monName} from the Dex?"):
+            return
+        
+        TUPdatabase.deleteMon(dexMonID)
+
+        #clear selection
+        self.selectedDexMonID = None
+        self.refreshPokedexResults()
 
 
     def showLogin(self):

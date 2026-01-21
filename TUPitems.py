@@ -93,37 +93,47 @@ class Move(Item):
 
 #---------Pokémon Class---------#
 class Mon(Item):
-    def __init__(self, itemGroup, id, chosenGen):
+    def __init__(self, itemGroup, idOrName, chosenGen):
 
         ##---------Attributes---------##
-        super().__init__(itemGroup, id, chosenGen)
-        self._dexNum = id     ###not to be confused with MonID
-        self._species = pb.pokemon_species(id).genera[0]
-        self._type1 = pb.pokemon(id).types[0].type.name
+        super().__init__(itemGroup, idOrName, chosenGen)
+        
         try:
-            self._type2 = pb.pokemon(id).types[1].type.name
+            pokemon = pb.pokemon(idOrName)
+            species = pb.pokemon_species(idOrName)
+        except Exception:
+            raise ValueError("Invalid Pokémon name or ID")
+
+
+
+        self._dexNum = pokemon.id     ###not to be confused with MonID
+        self._name = pokemon.name
+        self._species = species.genera[0]
+        self._type1 = pokemon.types[0].type.name
+        try:
+            self._type2 = pokemon.types[1].type.name
         except IndexError:  ###if pokemon has only one type
             self._type2 = -1
-        self._height = pb.pokemon(id).height
-        self._weight = (pb.pokemon(id).weight)/10
+        self._height = pokemon.height
+        self._weight = pokemon.weight/10
 
-        self._HP = pb.pokemon(id).stats[0].base_stat
-        self._Atk = pb.pokemon(id).stats[1].base_stat
-        self._Def = pb.pokemon(id).stats[2].base_stat
-        self._SpA = pb.pokemon(id).stats[3].base_stat
-        self._SpD = pb.pokemon(id).stats[4].base_stat
-        self._Spe = pb.pokemon(id).stats[5].base_stat
+        self._HP = pokemon.stats[0].base_stat
+        self._Atk = pokemon.stats[1].base_stat
+        self._Def = pokemon.stats[2].base_stat
+        self._SpA = pokemon.stats[3].base_stat
+        self._SpD = pokemon.stats[4].base_stat
+        self._Spe = pokemon.stats[5].base_stat
         self._BST = self._HP+self._Atk+self._Def+self._SpA+self._SpD+self._Spe
 
-        self._catchRate = pb.pokemon_species(id).capture_rate
+        self._catchRate = species.capture_rate
 
         self._eggGroups = ''
-        for i in pb.pokemon_species(id).egg_groups:
+        for i in species.egg_groups:
             self._eggGroups += str(i.name) + '|'    ###separated by |
 
-        self._gender = pb.pokemon_species(id).gender_rate
-        self._eggCycle = pb.pokemon_species(id).hatch_counter
-        self._evoChainID = pb.pokemon_species(id).evolution_chain.id
+        self._gender = species.gender_rate
+        self._eggCycle = species.hatch_counter
+        self._evoChainID = species.evolution_chain.id
 
         self._evoList = []  ###first sublist is base of evolution chain, all subsequent sublists represent a branch of the evolution chain
         self._evoList.append([pb.evolution_chain(self._evoChainID).chain.species.name])
@@ -139,19 +149,19 @@ class Mon(Item):
 
             self._evoList.append(evoBranchList)
         try:
-            self._preEvo = pb.pokemon_species(id).evolves_from_species.name
+            self._preEvo = species.evolves_from_species.name
         except AttributeError:  ###to show pokemon has no pre-evolution
             self._preEvo = -1
 
         self._locations = ''
-        for i in range(len(pb.pokemon(id).location_area_encounters)):
-            self._locations += str(pb.pokemon(id).location_area_encounters[i].location_area.name) + '|'
+        for i in range(len(pokemon.location_area_encounters)):
+            self._locations += str(pokemon.location_area_encounters[i].location_area.name) + '|'
 
         self._moves = ''
-        for i in range(len(pb.pokemon(id).moves)):
-            self._moves += str(pb.pokemon(id).moves[i].move.name) + '|' ###separated by |
+        for i in range(len(pokemon.moves)):
+            self._moves += str(pokemon.moves[i].move.name) + '|' ###separated by |
 
-        self._spriteURL = pb.pokemon(id).sprites.front_default
+        self._spriteURL = pokemon.sprites.front_default
 
     ##---------Methods---------##
     def getDexNum(self):

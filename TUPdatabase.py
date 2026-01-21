@@ -372,7 +372,7 @@ def searchDexMonsForButtons(dexID, criteria):
             FROM tblDexMon dm
             JOIN tblMon m ON m.MonID = dm.MonID
             {sqlWHERE}
-            ORDER BY DexNum
+            ORDER BY m.DexNum
             LIMIT 200
             ''',
             parameters
@@ -409,6 +409,7 @@ def returnMon(monID):   #returns the details of a single Pokémon from the datab
 def returnDexMon(dexMonID):
     #connects to database
     conn = sqlite3.connect('TUP.db')
+    conn.row_factory = sqlite3.Row
     curs = conn.cursor()   
 
     curs.execute('''
@@ -427,7 +428,7 @@ def returnDexMon(dexMonID):
     if row:
         return dict(row)
     else:
-        None
+        return None
     
 def getMonIDByDexNum(dexNum):
     #connects to database
@@ -457,14 +458,14 @@ def deleteMon(dexMonID): #deletes an entered Pokémon from the database
     curs = conn.cursor()
 
     curs.execute('''
-        DELETE FROM tblDexMon
+        DELETE FROM tblUserDexMon
         WHERE DexMonID = ?
     ''',
     (dexMonID,)
     )
 
     curs.execute('''
-        DELETE FROM tblUserDexMon
+        DELETE FROM tblDexMon
         WHERE DexMonID = ?
     ''',
     (dexMonID,)
