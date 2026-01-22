@@ -3,8 +3,151 @@
 #-------------------imports------------------#
 import pokebase as pb
 
+#---------functions----------#
+def spriteURLFromDexNum(dexNum):
+    if not dexNum:
+        return None
+    else:
+        return f'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dexNum}.png'
+    
+def parseIDFromURL(url):
+    try:
+        return int(str(url).rstrip('/').split('/')[-1])
+    except:
+        return None
 
+def searchEncyclopedia(criteria, limit=200):
+    itemType = criteria.get('itemType', 'Pokémon')
+    query = (criteria.get('query') or '').strip().lower()
+    gen = criteria.get('gen', 'Any')
+    typeName = (criteria.get('type') or '').strip().lower()
 
+    #if user typed something
+    if query:
+        try:
+            if itemType == 'Pokémon':
+                if not query.isdigit():
+                    p = pb.pokemon(query)
+                else:
+                    p = pb.pokemon(int(query))
+
+                dexNum = int(p.id)
+                name = str(p.name).replace('-', ' ').title()
+                return [(dexNum, name, spriteURLFromDexNum(dexNum))]
+
+            if itemType == 'Move':
+                if not query.isdigit():
+                    m = pb.move(query)
+                else:
+                    m = pb.move(int(query))
+                moveID = int(m.id)
+                name = str(m.name).replace('-', ' ').title()
+                return [(moveID, name, None)]
+            
+            if itemType == 'Ability':
+                if not query.isdigit():
+                    a = pb.ability(query)
+                else:
+                    m = pb.ability(int(query))
+                abilID = int(a.id)
+                name = str(a.name).replace('-', ' ').title()
+                return [(abilID, name, None)]
+        
+        except:
+            return []
+        
+    #else build filtered list
+    def getFirstN(items):
+        return items[:limit]
+    
+    #pokemon list
+    if itemType == 'Pokémon':
+        candidates = None
+
+        #filter by gen
+        if gen != 'Any':
+            g = pb.generation(int(gen))
+            genDict = {}
+            for i in g.pokemon_species:
+                dexNum = parseIDFromURL(getattr(i, 'url', None))
+                if dexNum:
+                    genDict[i.name] = dexNum
+            candidates = genDict
+
+        #filter by type
+        if typeName:
+            t = pb.type(typeName)
+            typeDict = {}
+            for i in t.pokemon:
+                p = i.pokemon
+                dexNum = parseIDFromURL(getattr(i, 'url', None))
+                if dexNum:
+                    typeDict[i.name] = dexNum
+
+            if candidates is None:  
+                candidates = typeDict
+            else:
+                candidates = {name: candidates[name] for name in candidates if name in typeDict}
+
+        if not candidates:
+            return []
+        
+        rows = []
+        for name, dexNum in getFirstN(sorted(candidates.items(), key=lambda x: x[1])):
+            rows.append((dexNum, str(name).replace('-', ' ').title(), spriteURLFromDexNum(dexNum)))
+        return rows
+    
+    #move list
+    if itemType == 'Move':
+        candidates = None
+
+        #filter by gen
+        if gen != 'Any':
+            g = pb.generation(int(gen))
+            genDict = {}
+            for i in g.moves:
+                moveID = parseIDFromURL(getattr(i, 'url', None))
+                if moveID:
+                    genDict[i.name] = moveID
+            candidates = genDict
+
+        #filter by type
+        if typeName:
+            t = pb.type(typeName)
+            typeDict = {}
+            for i in t.moves:
+                moveID = parseIDFromURL(getattr(i, 'url', None))
+                if moveID:
+                    typeDict[i.name] = moveID
+
+            if candidates is None:  
+                candidates = typeDict
+            else:
+                candidates = {name: candidates[name] for name in candidates if name in typeDict}
+
+        if not candidates:
+            return []
+        
+        rows = []
+        for name, moveID in getFirstN(sorted(candidates.items(), key=lambda x: x[1])):
+            rows.append((moveID, str(name).replace('-', ' ').title(), spriteURLFromDexNum(dexNum)))
+        return rows
+    
+    #ability list
+    if itemType == 'Ability':
+        #user must search or pick gen
+        if gen == 'Any':
+            return []
+        
+        g = pb.generation(int(gen))
+        rows = []
+        for i in g.abilities[:limit]:
+            abilID = parseIDFromURL(getattr(i, 'url', None))
+            if abilID:
+                rows.append((abilID, str(i.name).replace('-', ' ').title(), None))
+        return rows
+    
+    return []
 #---------Item Class---------#
 class Item:
     def __init__(self, itemGroup, id, chosenGen):
@@ -18,7 +161,7 @@ class Item:
             langDict = {1:1, 2:1, 3:1, 4:1, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
             self._name = pb.pokemon(id).name    ##name of pokemon
             self._fromGen = pb.pokemon_species(id).generation.id    ##generation item is from
-            self._flavorText = (pb.pokemon_species(id).flavor_text_entries[langDict[self._fromGen]].flavor_text).replace("\n", " ") ##pokemon flavor text
+            self._flavorText = next((i.flavor_text.replace("\n", " ") for i in pb.pokemon_species(id).flavor_text_entries if getattr(i.language, "name", None) == "en"), "") ##pokemon flavor text, in english
 
         elif self._itemGroup == 'move': #for Move class
             langDict = {1:6, 2:6, 3:0, 4:0, 5:1, 6:6, 7:7, 8:7, 9:0}   #gen : english index
@@ -104,17 +247,19 @@ class Mon(Item):
         except Exception:
             raise ValueError("Invalid Pokémon name or ID")
 
-
-
-        self._dexNum = pokemon.id     ###not to be confused with MonID
+        self._dexNum = pokemon.id
         self._name = pokemon.name
-        self._species = species.genera[0]
+
+        #ensures species is in english
+        self._englishGenus = next((i.genus for i in species.genera if i.language.name == 'en'), None)
+        self._species = self._englishGenus or 'Unknown'
+
         self._type1 = pokemon.types[0].type.name
         try:
             self._type2 = pokemon.types[1].type.name
         except IndexError:  ###if pokemon has only one type
             self._type2 = -1
-        self._height = pokemon.height
+        self._height = pokemon.height/10
         self._weight = pokemon.weight/10
 
         self._HP = pokemon.stats[0].base_stat
@@ -161,6 +306,10 @@ class Mon(Item):
         for i in range(len(pokemon.moves)):
             self._moves += str(pokemon.moves[i].move.name) + '|' ###separated by |
 
+        self._abilities = ""
+        for a in pokemon.abilities:
+            self._abilities += str(a.ability.name) + "|"
+
         self._spriteURL = pokemon.sprites.front_default
 
     ##---------Methods---------##
@@ -203,6 +352,8 @@ class Mon(Item):
         return self._locations
     def getMoves(self):
         return self._moves
+    def getAbilities(self):
+        return self._abilities
     def getGender(self):
         return self._gender
     def getEggCycle(self):
@@ -294,7 +445,3 @@ def outAbility():
 
     print('Name: ', name)
     print('Flavor Text: ', flavorText)
-
-# def getTestSpriteURL():
-#     testSpriteURL = pb.pokemon(35).sprites.front_default
-#     return testSpriteURL

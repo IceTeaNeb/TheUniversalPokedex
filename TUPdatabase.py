@@ -95,21 +95,6 @@ def createDatabase():
     conn.commit()
     conn.close()
 
-#migrate database schema
-def migrateDatabase():
-    conn = sqlite3.connect('TUP.db')
-    curs = conn.cursor()
-    
-    # Check if SpriteURL column exists in tblMon
-    curs.execute("PRAGMA table_info(tblMon)")
-    columns = [column[1] for column in curs.fetchall()]
-    
-    if 'SpriteURL' not in columns:
-        curs.execute('ALTER TABLE tblMon ADD COLUMN SpriteURL TEXT')
-        conn.commit()
-    
-    conn.close()
-
 #add a user to tblUser
 def addUser(username, password):
     hashedPass = hashlib.sha256(password.encode()).hexdigest()
@@ -308,15 +293,15 @@ def searchMonsForButtons(criteria):
 
     return rows
 
-def searchDexMonsForButtons(dexID, criteria):    
+def searchDexMonsForButtons(userID, dexID, criteria):    
     #connects to database
     conn = sqlite3.connect('TUP.db')
     curs = conn.cursor()
 
     #list for each part of WHERE in sql
-    partsWHERE = ["dm.DexID = ?"]
+    partsWHERE = ["dm.DexID = ?", "udm.UserID = ?"]
     #list for holding values for ? placeholders
-    parameters = [dexID]
+    parameters = [dexID, userID]
 
     #name criteria
     if criteria.get('name'):
@@ -363,14 +348,13 @@ def searchDexMonsForButtons(dexID, criteria):
         partsWHERE.append('m.Weight <= ?')
         parameters.append(criteria['weightMax'])
 
-    sqlWHERE = ''
-    if partsWHERE:
-        sqlWHERE = 'WHERE ' + ' AND '.join(partsWHERE)
+    sqlWHERE = 'WHERE ' + ' AND '.join(partsWHERE)
     
     curs.execute(f'''
             SELECT dm.DexMonID, m.MonName, m.SpriteURL
             FROM tblDexMon dm
             JOIN tblMon m ON m.MonID = dm.MonID
+            JOIN tblUserDexMon udm ON udm.DexMonID = dm.DexMonID
             {sqlWHERE}
             ORDER BY m.DexNum
             LIMIT 200
@@ -423,6 +407,32 @@ def returnDexMon(dexMonID):
 
     row = curs.fetchone()
 
+    conn.close()
+
+    if row:
+        return dict(row)
+    else:
+        return None
+    
+def returnDexMonForUser(userID, dexMonID):
+    #connects to database
+    conn = sqlite3.connect('TUP.db')
+    conn.row_factory = sqlite3.Row
+    curs = conn.cursor()
+
+    curs.execute('''   
+        SELECT dm.DexMonID, dm.DexID, dm.MonID, dm.MonGen, dm.Moves, dm.Ability, m.*,
+                 udm.HP AS UHP, udm.Atk AS UAtk, udm.Def AS UDef, udm.SpA AS USpA, udm.SpD AS USpD, udm.Spe AS USpe
+        FROM tblUserDexMon udm
+        JOIN tblDexMon dm ON dm.DexMonID = udm.DexMonID
+        JOIN tblMon m ON m.MonID = dm.MonID
+        WHERE udm.UserID = ? AND dm.DexMonID = ?
+    ''',
+    (userID, dexMonID)
+    )
+
+    row = curs.fetchone()
+    
     conn.close()
 
     if row:

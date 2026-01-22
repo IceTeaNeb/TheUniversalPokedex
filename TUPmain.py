@@ -11,4 +11,3 @@ if __name__ == '__main__':
     mainWin = TUPUI.mainWindow()
     mainWin.showLogin()
     mainWin.mainloop()
-    
