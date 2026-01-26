@@ -3,12 +3,14 @@
 #-------------------imports--------------------#
 import TUPitems
 import TUPdatabase
+import TUPteamrater
 import tkinter as tk
 import os
 import requests
 import threading
 import ast
 import sqlite3
+import pokebase as pb
 from tkinter import PhotoImage, ttk
 from tkinter.messagebox import showinfo, askyesno
 from PIL import Image, ImageTk
@@ -149,6 +151,59 @@ class mainWindow(tk.Tk):
         self.heightClassVar = tk.StringVar(value='Any')
         self.weightClassVar = tk.StringVar(value='Any')
         self.bstRangeVar = tk.StringVar(value='Any')
+
+        #team rater
+        self.teamGenVar = tk.StringVar(value='Any')
+        self.teamGameVar = tk.StringVar(value='Select Game')
+
+        #games
+        self.gamesByGen = {
+            '1': ['Red/Blue', 'Yellow'],
+            '2': ['Gold/Silver', 'Crystal'],
+            '3': ['Ruby/Sapphire', 'Emerald', 'Fire Red/Leaf Green'],
+            '4': ['Diamond/Pearl', 'Platinum', 'Heart Gold/Soul Silver'],
+            '5': ['Black/White', 'Black 2/White 2'],
+            '6': ['X/Y', 'Omega Ruby/Alpha Sapphire'],
+            '7': ['Sun/Moon', 'Ultra Sun/Ultra Moon', "Let's Go Pikachu/Eevee"],
+            '8': ['Sword/Shield', 'Brilliant Diamond/Shining Pearl', 'Legends: Arceus'],
+            '9': ['Scarlet/Violet']
+        }
+
+        self.teamSlots = [None]*6
+
+        #pokeAPI game version names
+        self.gameVersions = {
+            #gen 1
+            'Red/Blue': ['red', 'blue'],
+            'Yellow': ['yellow'],
+            #gen2
+            'Gold/Silver': ['gold', 'silver'],
+            'Crystal': ['crystal'],
+            #gen3
+            'Ruby/Sapphire': ['ruby', 'sapphire'],
+            'Emerald': ['emerald'],
+            'FireRed/LeafGreen': ['firered', 'leafgreen'],
+            #gen4
+            'Diamond/Pearl': ['diamond', 'pearl'],
+            'Platinum': ['platinum'],
+            'HeartGold/SoulSilver': ['heartgold', 'soulsilver'],
+            #gen5
+            'Black/White': ['black', 'white'],
+            'Black 2/White 2': ['black-2', 'white-2'],
+            #gen6
+            'X/Y': ['x', 'y'],
+            'Omega Ruby/Alpha Sapphire': ['omega-ruby', 'alpha-sapphire'],
+            #gen7
+            'Sun/Moon': ['sun', 'moon'],
+            'Ultra Sun/Ultra Moon': ['ultra-sun', 'ultra-moon'],
+            "Let's Go Pikachu/Eevee": ['lets-go-pikachu', 'lets-go-eevee'],
+            #gen8
+            'Sword/Shield': ['sword', 'shield'],
+            'Brilliant Diamond/Shining Pearl': ['brilliant-diamond', 'shining-pearl'],
+            'Legends: Arceus': ['legends-arceus'],
+            #gen9
+            'Scarlet/Violet': ['scarlet', 'violet']
+        }
 
     #retrieves sprite using given URL
     def getSprite(self, URL, label):
@@ -368,7 +423,7 @@ class mainWindow(tk.Tk):
         self.refreshPokedexResults()
 
     def encyclopediaFrame(self):
-        self.makeDetailsFrame()
+        self.makeDetailsFrame(headerText='Select Entry', framePady=(0, 15), gridRow=0, rowSpan=4)
         self.makeTitle("Encyclopedia")
 
         #search entry
@@ -398,18 +453,18 @@ class mainWindow(tk.Tk):
         
         itemOptions = [('Pokémon', 'Pokémon'), ('Move', 'Move'), ('Ability', 'Ability')]
 
-        self.makeFilterMenu(self.encycItemMenu, itemOptions, self.encycItemTypeVar)
+        self.makeFilterMenu(self.encycItemMenu, itemOptions, self.encycItemTypeVar, self.refreshEncyclopediaResults)
 
         #generation menu
         self.encycGenMenu = ttk.Menubutton(self.encycFiltersFrame, text='Gen', style='filter.TMenubutton')
         self.encycGenMenu.grid(row=0, column=1, sticky=tk.EW, padx=(0, 8))
         
-        genOptions = [('Any', 'Any')] + [((f'Gen {i}', str(i)) for i in range(1, 10))]
+        genOptions = [('Any', 'Any')] + [(f'Gen {i}', str(i)) for i in range(1, 10)]
 
-        self.makeFilterMenu(self.encycGenMenu, genOptions, self.encycGenVar)
+        self.makeFilterMenu(self.encycGenMenu, genOptions, self.encycGenVar, self.refreshEncyclopediaResults)
 
         #type menu
-        self.encycTypeMenu = ttk.MenuButton(self.encycFiltersFrame, text='Type', style='filter.TMenubutton')
+        self.encycTypeMenu = ttk.Menubutton(self.encycFiltersFrame, text='Type', style='filter.TMenubutton')
         self.encycTypeMenu.grid(row=0, column=2, sticky=tk.EW, padx=(0, 8))
 
         typeOptions = [('Any', 'Any'), ('Normal', 'Normal'), ('Fire', 'Fire'), ('Water', 'Water'),
@@ -418,11 +473,11 @@ class mainWindow(tk.Tk):
                        ('Bug', 'Bug'), ('Rock', 'Rock'), ('Ghost', 'Ghost'), ('Dragon', 'Dragon'),
                        ('Dark', 'Dark'), ('Steel', 'Steel'), ('Fairy', 'Fairy')]
         
-        self.makeFilterMenu(self.encycTypeMenu, typeOptions, self.encycTypeVar)
+        self.makeFilterMenu(self.encycTypeMenu, typeOptions, self.encycTypeVar, self.refreshEncyclopediaResults)
 
         #scrollable results
-        self.encycResultsOuter, self.encycResultsCanvas, self.encycResultsInner, self.makeScrollableFrame(self.mainFrame)
-        self.encycResultsOuter.grid(row=2, column=2, rowspan=2, columnspan=2, sticky=tk.NSEW, padx=15, pady=15)
+        self.encycResultsOuterFrame, self.encycResultsCanvas, self.encycResultsInnerFrame = self.makeScrollableFrame(self.mainFrame)
+        self.encycResultsOuterFrame.grid(row=2, column=2, rowspan=2, columnspan=2, sticky=tk.NSEW, padx=15, pady=15)
 
         self.refreshEncyclopediaResults()
         
@@ -523,6 +578,33 @@ class mainWindow(tk.Tk):
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
         self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
 
+        #select frame
+        self.teamSelectFrame = ttk.Frame(self.mainFrame, padding=15, style='TFrame')
+        self.teamSelectFrame.grid(row=1, column=0, columnspan=4, sticky=tk.NSEW, padx=15)
+
+        for column in range(4):
+            self.teamSelectFrame.columnconfigure(column, weight=1)
+
+        title = ttk.Label(self.teamSelectFrame, text='Select Game', anchor='center', style='small.TLabel')
+        title.grid(row=0, column=0, columnspan=4, sticky=tk.EW, pady=(0, 15))
+
+        #gen dropdown
+        self.teamGenMenu = ttk.Menubutton(self.teamSelectFrame, text='Generation', style='filter.TMenubutton')
+        self.teamGenMenu.grid(row=1, column=1, sticky=tk.EW, padx=(0, 8))
+
+        genOptions = [('Any', 'Any')] + [(f'Gen {i}', str(i)) for i in range(1, 10)]
+        self.makeFilterMenu(self.teamGenMenu, genOptions, self.teamGenVar, refreshCommand=self.refreshTeamGameMenu)
+
+        #game dropdown
+        self.teamGameMenu = ttk.Menubutton(self.teamSelectFrame, text='Game', style='filter.TMenubutton')
+        self.teamGameMenu.grid(row=1, column=2, sticky=tk.EW, padx=(8, 0))
+
+        #continue button
+        self.teamContinueButton = ttk.Button(self.teamSelectFrame, text='Continue', style='enter.TButton', command=self.onTeamGameContinue)
+        self.teamContinueButton.grid(row=2, column=1, columnspan=2, sticky=tk.EW, pady=(15, 0))
+
+        self.refreshTeamGameMenu()
+
     #making frame for scrollable canvas
     def makeScrollableFrame(self, parent):
         #frame for canvas and scrollbar
@@ -613,8 +695,11 @@ class mainWindow(tk.Tk):
                 threading.Thread(target=self.loadSpriteToLabel, args=(spriteURL, spriteLabel, dexMonID), daemon=True).start()
 
     #populates grid with results that match the criteria  
-    def populateResultsGrid(self, rows):
-        for widget in self.encycInnerFrame.winfo_children():
+    def populateEncyclopediaGrid(self, rows):
+        if not hasattr(self, 'encycResultsInnerFrame'):
+            return
+
+        for widget in self.encycResultsInnerFrame.winfo_children():
             widget.destroy()
 
         self.encycSpriteRefs = {}
@@ -632,10 +717,10 @@ class mainWindow(tk.Tk):
             self.cardColumn = index%self.columns
 
             #card frame
-            self.card = ttk.Frame(self.encycInnerFrame, padding=8, style='TFrame')
+            self.card = ttk.Frame(self.encycResultsInnerFrame, padding=8, style='TFrame')
             self.card.grid(row=self.cardRow, column=self.cardColumn, sticky=tk.NSEW, padx=self.cardPadX, pady=self.cardPadY)
 
-            self.encycResultsInner.columnconfigure(self.cardColumn, weight=1)
+            self.encycResultsInnerFrame.columnconfigure(self.cardColumn, weight=1)
 
             #sprite label
             spriteLabel = ttk.Label(self.card, text='')
@@ -661,7 +746,9 @@ class mainWindow(tk.Tk):
 
     #refreshes displayed Pokémon when user changes criteria
     def refreshPokedexResults(self):
-        if not hasattr(self, 'resultsInnerFrame'):
+        if not hasattr(self, 'resultsInnerFrame') or not self.resultsInnerFrame.winfo_exists():
+            return
+        if not hasattr(self, 'searchEntry') or not self.searchEntry.winfo_exists():
             return
 
         #form criteria dictionary from inputs
@@ -698,7 +785,9 @@ class mainWindow(tk.Tk):
 
     #refreshes displayed results when user changes criteria
     def refreshEncyclopediaResults(self):
-        if not hasattr(self, 'encycInnerFrame'):
+        if not hasattr(self, 'encycResultsInnerFrame') or not self.encycResultsInnerFrame.winfo_exists():
+            return
+        if not hasattr(self, 'encycSearchEntry') or not self.encycSearchEntry.winfo_exists():
             return
 
         criteria = {'itemType': self.encycItemTypeVar.get(),
@@ -715,6 +804,18 @@ class mainWindow(tk.Tk):
         if rows:
             firstKey = rows[0][0]
             self.onSelectEncyclopediaItem(firstKey)
+
+        else:
+            self.selectedEncycKey = None
+            self.detailsNameLabel.configure(text='No results')
+            self.detailsInfoText.config(state='normal')
+            self.detailsInfoText.delete('1.0', 'end')
+            self.detailsInfoText.insert('1.0', 'No results match your search.')
+            self.detailsInfoText.configure(state='disabled')
+
+            self.detailsSpriteLabel.configure(image='')
+            self.detailsSpriteLabel.grid_remove()
+            self.detailsSpriteRef = None
     
     #loads specified Pokémon sprite to label
     def loadSpriteToLabel(self, spriteURL, label, monID):
@@ -728,7 +829,10 @@ class mainWindow(tk.Tk):
 
             def apply():
                 label.configure(image=tkImage)
-                self.resultSpriteRefs[monID] = tkImage
+                if hasattr(self, 'resultSpriteRefs'):
+                    self.resultSpriteRefs[monID] = tkImage
+                if hasattr(self, 'encycSpriteRefs'):
+                    self.encycSpriteRefs[monID] = tkImage
             
             self.after(0, apply)
         except:
@@ -810,6 +914,7 @@ class mainWindow(tk.Tk):
             self.detailsSpriteRef = None
 
     def showEncyclopediaDetails(self, itemKey):
+        sprite = None
         itemType = self.encycItemTypeVar.get()
         chosenGen = self.encycGenVar.get()
         if chosenGen != 'Any':
@@ -825,26 +930,19 @@ class mainWindow(tk.Tk):
                 monObj = TUPitems.Mon('mon', int(itemKey), chosenGenNum)
 
                 #update sprite
-                sprite = self.loadCachedSprite(monObj.getSpriteURL, size=(256, 256))
-                if sprite:
-                    self.detailsSpriteLabel.grid()
-                    self.detailsSpriteLabel.configure(image=sprite)
-                    self.detailsSpriteRef = sprite
-                else:
-                    self.detailsSpriteLabel.configure(image='')
-                    self.detailsSpriteLabel.grid_remove()
-                    self.detailsSpriteRef = None
+                sprite = self.loadCachedSprite(monObj.getSpriteURL(), size=(256, 256))
 
                 #update labels
-                self.detailsNameLabel.configure(text=monObj.getItemName.title())
+                self.detailsNameLabel.configure(text=monObj.getItemName().title())
 
                 #stats, base or custom
                 statsLine = f"HP {monObj.getHP()} / Atk {monObj.getAtk()} / Def {monObj.getDef()} / SpA {monObj.getSpA()} / SpD {monObj.getSpD()} / Spe {monObj.getSpe()}"
                 bst = monObj.getBST()
                         
-                typeLine = {self.titleName(monObj.getType1())}
-                if monObj.getType2() != -1:
-                    typeLine += " / " + self.titleName(monObj.getType2())
+                typeLine = self.titleName(monObj.getType1())
+                type2 = monObj.getType2()
+                if type2 not in (-1, None, '', 'none'):
+                    typeLine += " / " + self.titleName(type2)
 
                 if monObj.getPreEvo():
                     preEvo = self.titleName(monObj.getPreEvo())
@@ -852,23 +950,23 @@ class mainWindow(tk.Tk):
                     preEvo = "None"
 
                 evoBlock = self.formatEvo(monObj.getEvoList())
-                eggGroupsBlock = self.formatPipeBlock("Egg Groups", monObj.getEggGroups)
+                eggGroupsBlock = self.formatPipeBlock("Egg Groups", monObj.getEggGroups())
                 locationsBlock = self.formatPipeBlock("Locations", monObj.getLocations(), maxItems=10)
 
-                movesRaw = monObj.getMoves or ""
+                movesRaw = monObj.getMoves() or ""
                 movesBlock = self.formatPipeBlock("Moves", movesRaw)
 
                 abilitiesRaw = monObj.getAbilities() or ''
                 abilitiesBlock = self.formatPipeBlock('Abilities', abilitiesRaw, maxItems=6)
 
-                flavorText = (monObj.getFlavorText or "").strip()
+                flavorText = (monObj.getFlavorText() or "").strip()
 
-                infoText = (f'National Dex Number: {monObj.getDexNum}\n'
-                            f'Species: {self.titleName(monObj.getSpecies)}\n'
+                infoText = (f'National Dex Number: {monObj.getDexNum()}\n'
+                            f'Species: {self.titleName(monObj.getSpecies())}\n'
                             f'Type: {typeLine}\n'
                             f'Height: {monObj.getHeight()} m\n'
                             f'Weight: {monObj.getWeight()} kg\n'
-                            f'Egg Cycle: {monObj.getEggCycle}\n'
+                            f'Egg Cycle: {monObj.getEggCycle()}\n'
                             f'{eggGroupsBlock}\n'
                             f'Pre-Evolution: {preEvo}\n\n'
                             f'{evoBlock}\n\n'
@@ -897,7 +995,7 @@ class mainWindow(tk.Tk):
                 abilObj = TUPitems.Ability('ability', int(itemKey), chosenGenNum)
                 self.detailsNameLabel.configure(text=abilObj.getItemName().replace('-', ' ').title())
 
-                infoText = (f"Flavor Text: {moveObj.getFlavorText() or 'None'}\n")
+                infoText = (f"Flavor Text: {abilObj.getFlavorText() or 'None'}\n")
             
             self.detailsInfoText.configure(state='normal')
             self.detailsInfoText.delete('1.0', 'end')
@@ -905,11 +1003,20 @@ class mainWindow(tk.Tk):
             self.detailsInfoText.configure(state='disabled')
         
         except:
-            self.detailsInfoText.configure(text='No results')
             self.detailsInfoText.configure(state='normal')
             self.detailsInfoText.delete('1.0', 'end')
             self.detailsInfoText.insert('1.0', 'Could not load details from PokéAPI.')
-            self.detailsInfoText.configure(state='disabled')        
+            self.detailsInfoText.configure(state='disabled')
+            sprite = None
+
+        if sprite:
+            self.detailsSpriteLabel.grid()
+            self.detailsSpriteLabel.configure(image=sprite)
+            self.detailsSpriteRef = sprite
+        else:
+            self.detailsSpriteLabel.configure(image='')
+            self.detailsSpriteLabel.grid_remove()
+            self.detailsSpriteRef = None   
                 
 
     def titleName(self, text):
@@ -942,20 +1049,35 @@ class mainWindow(tk.Tk):
         if not evoText:
             return "Evolution: None"
         
-        try:
-            evoObj = ast.literal_eval(evoText)
-        except:
-            return f"Evolution: {evoText}"
+        evoObj = evoText
         
-        base = " → ".join(self.titleName(name) for name in (evoObj[0] if isinstance(evoObj[0], list) else evoObj))
-        branches = []
-        for branch in evoObj[1:]:
-            if isinstance(branch, list) and branch:
-                branches.append(" → ".join(self.titleName(name) for name in branch))
+        #if string, parse into lists
+        if isinstance(evoText, str):
+            try:
+                evoObj = ast.literal_eval(evoText)
+            except:
+                return f"Evolution: {self.titleName(evoText)}"
+            
+        #shows even if not list after parsing
+        if not isinstance(evoObj, list) or len(evoObj) == 0:
+            return f"Evolution: None"
+        
+        if isinstance(evoObj[0], list):
+            baseList = evoObj[0]
+        else:
+            baseList = [evoObj[0]]
 
-        if branches:
-            return "Evolution:\n " + base + "\n " + "\n ".join(branches)
-        return "Evolution:\n " + base
+        output = "Evolution: \n" 
+        output += " → ".join(self.titleName(name) for name in baseList)
+        
+        #adds branches
+        if len(evoObj) > 1:
+            output += "\nBranches: \n"
+            for branch in evoObj[1:]:
+                if isinstance(branch, list) and branch:
+                    output += " " + " → ".join(self.titleName(name) for name in branch) + "\n"
+        
+        return output.strip() 
 
     #when a Pokémon is selected
     def onSelectMon(self, dexMonID):
@@ -966,25 +1088,27 @@ class mainWindow(tk.Tk):
 
         self.showMonDetails(dexMonID)
 
-    def onSelectEncyclopediaItem(self, itemKey):
-        self.selectedEncycKey = itemKey
-        self.showEncyclopediaDetails(itemKey)
+    def onSelectEncyclopediaItem(self, itemID):
+        self.selectedEncycKey = itemID
+        self.showEncyclopediaDetails(itemID)
 
     #make menu for filtering
-    def makeFilterMenu(self, menuButton, options, variable):
-        menu = tk.Menu(menuButton, tearoff=False)
-        menuButton['menu'] = menu
+    def makeFilterMenu(self, menuButton, options, variable, refreshCommand=None):
+        menu = tk.Menu(menuButton, tearoff=0)
+
+        if refreshCommand is None:
+            refreshCommand = lambda: None
 
         for label, value in options:
-            menu.add_radiobutton(label=label, value=value, variable=variable, command=self.refreshPokedexResults)
+            menu.add_radiobutton(label=label, value=value, variable=variable, command=refreshCommand)
         
-        return menu
+        menuButton['menu'] = menu
     
     #make frame for showing selected Pokémon information
-    def makeDetailsFrame(self):
+    def makeDetailsFrame(self, headerText='Select Pokémon', framePady=15, gridRow=1, rowSpan=3):
         self.detailsFrame = ttk.Frame(self.mainFrame, padding=(20, 20), style='TFrame')
         #self.detailsFrame.grid_propagate(False)
-        self.detailsFrame.grid(row=1, column=0, columnspan=2, rowspan=3, sticky=tk.NSEW, padx=(15, 10), pady=15)
+        self.detailsFrame.grid(row=gridRow, column=0, columnspan=2, rowspan=rowSpan, sticky=tk.NSEW, padx=(15, 10), pady=framePady)
 
         self.detailsFrame.rowconfigure(0, weight=0) #name
         self.detailsFrame.rowconfigure(1, weight=0) #sprite
@@ -993,7 +1117,7 @@ class mainWindow(tk.Tk):
         self.detailsFrame.columnconfigure(0, weight=1)
 
         #name label
-        self.detailsNameLabel = ttk.Label(self.detailsFrame, text='Select Pokémon', anchor='center', style='small.TLabel')
+        self.detailsNameLabel = ttk.Label(self.detailsFrame, text=headerText, anchor='center', style='small.TLabel')
         self.detailsNameLabel.grid(row=0, column=0, sticky=tk.EW, pady=(0, 10))
 
         #sprite label
@@ -1071,17 +1195,10 @@ class mainWindow(tk.Tk):
             else:
                 return int(text)
         
-        #normalises input
-        def normaliseMonInput(text):
-            text = text.strip()
-            if text == '':
-                return None
-            return text.lower().replace(" ", "-")
-
         #when user presses add button
         def onAdd():
             userIn = self.dexNumEntry.get()
-            monKey = normaliseMonInput(userIn)
+            monKey = self.normaliseMonInput(userIn)
 
             if not monKey:
                 showinfo("Error", "Please enter a Dex number or Pokédex name.")
@@ -1089,10 +1206,7 @@ class mainWindow(tk.Tk):
 
             #Pokémon object
             try:
-                if monKey.isdigit():
-                    monObj = TUPitems.Mon('mon', int(monKey), self.genNum)
-                else:
-                    monObj = TUPitems.Mon('mon', monKey, self.genNum)
+                monObj = TUPitems.Mon('mon', monKey, self.genNum)
             except:
                 showinfo("Error", "Could not load that Pokémon from the API.")
                 return
@@ -1176,6 +1290,448 @@ class mainWindow(tk.Tk):
         self.selectedDexMonID = None
         self.refreshPokedexResults()
 
+    def refreshTeamGameMenu(self):
+        chosenGen = self.teamGenVar.get()
+        menu = tk.Menu(self.teamGameMenu, tearoff=0)
+
+        if chosenGen == 'Any':
+            self.teamGameVar.set('Select Game')
+            menu.add_command(label='Select a generation first', command=lambda: None)
+        else:
+            games = self.gamesByGen.get(chosenGen, [])
+            if not games:
+                self.teamGameVar.set('Select Game')
+                menu.add_command(label='No games available', command=lambda: None)
+            else:
+                #default to first game if current not in list
+                current = self.teamGameVar.get()
+                if current not in games:
+                    self.teamGameVar.set(games[0])
+
+                for game in games:
+                    menu.add_radiobutton(label=game, value=game, variable=self.teamGameVar)
+        
+        self.teamGameMenu['menu'] = menu
+
+    def onTeamGameContinue(self):
+        gen = self.teamGenVar.get()
+        game = self.teamGameVar.get()
+
+        if gen == 'Any':
+            showinfo('Team Rater', 'Please select a generation.')
+            return
+        
+        if not game or game == 'Select Game':
+            showinfo('Team Rater', 'Please select a game.')
+            return
+
+        self.selectedTeamGen = int(gen)
+        self.selectedTeamGame = game
+        self.showTeamInput()
+
+    #make filter criteria
+    def makePokedexCriteria(self):
+        name = ''
+
+        try:
+            if hasattr(self, 'searchEntry') and self.searchEntry.winfo_exists():
+                name = self.searchEntry.get().strip()
+        except tk.TclError:
+            return {'name': None, 'type1': None, 'type2': None, 'heightMin': None, 'heightMax': None, 'weightMin': None, 'weightMax': None, 'bstMin': None, 'bstMax': None}
+        
+        
+        #maps to numeric ranges
+        heightMap = {'Any': (None, None), 'Small': (0.0, 1.0), 'Medium': (1.0, 2.0), 'Large': (2.0, 100.0),}
+        weightMap = {'Any': (None, None), 'Light': (0.0, 25.0), 'Medium': (25.0, 100.0), 'Heavy': (100.0, 10000.0),}
+        bstMap = {'Any': (None, None), 'Low': (0, 300), 'Medium': (300, 500), 'High': (500, 9999),}
+
+        heightMin, heightMax = heightMap.get(self.heightClassVar.get(), (None, None))
+        weightMin, weightMax = weightMap.get(self.weightClassVar.get(), (None, None))
+        bstMin, bstMax = bstMap.get(self.bstRangeVar.get(), (None, None))
+
+        type1 = self.type1Var.get().strip()
+        type2 = self.type2Var.get().strip()
+
+        if type1 in ("", "Any"):
+            type1 = None
+        if type2 in ("", "Any"):
+            type2 = None
+
+        criteria = {'name': name if name else None, 'type1': type1, 'type2': type2, 'heightMin': heightMin, 'heightMax': heightMax, 'weightMin': weightMin, 'weightMax': weightMax, 'bstMin': bstMin, 'bstMax': bstMax,}
+
+        return criteria
+    
+    def showTeamInput(self):
+        for widget in self.mainFrame.winfo_children():
+            widget.destroy()
+
+        self.makeTitle(f'Team Rater = Gen {self.selectedTeamGen} ({self.selectedTeamGame})')
+    
+        #details frame
+        self.makeDetailsFrame(headerText='Select a Team Slot', framePady=(0, 15), gridRow=1, rowSpan=3)
+
+        #entry button
+        self.teamSearchEntry = ttk.Entry(self.mainFrame, font=(self.FONT, 20, 'bold'))
+        self.teamSearchEntry.grid(row=0, column=2, sticky=tk.EW, pady=(15, 10), padx=(0 ,10))
+        self.teamSearchEntry.bind('<Return>', lambda e: self.onAddTeamMon())
+
+        #add button
+        self.teamAddButton = ttk.Button(self.mainFrame, text='Add to Team', style='enter.TButton', command=self.onAddTeamMon)
+        self.teamAddButton.grid(row=0, column=3, sticky=tk.EW, pady=(15, 10), padx=(0, 0))
+
+        #team slots frame
+        self.teamSlotsFrame = ttk.Frame(self.mainFrame, padding=10, style='TFrame')
+        self.teamSlotsFrame.grid(row=1, column=2, columnspan=2, rowspan=3, sticky=tk.NSEW, pady=(0, 15), padx=15)
+
+        for column in range(2):
+            self.teamSlotsFrame.columnconfigure(column, weight=1, uniform='teamSlots', minsize=190)
+        for row in range(3):
+            self.teamSlotsFrame.rowconfigure(row, weight=1, uniform='teamSlotsRows', minsize=170)
+
+        self.showTeamSlots()
+
+        self.teamContinueButton = ttk.Button(self.mainFrame, text='Analyse Team', style='enter.TButton', command=self.onTeamAnalyse)
+        self.teamContinueButton.grid(row=0, column=0, columnspan=2, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+
+    def showTeamSlots(self):
+        for widget in self.teamSlotsFrame.winfo_children():
+            widget.destroy()
+
+        self.teamSpriteRefs = {}
+
+        for i in range(6):
+            r = i//2
+            c= i%2
+
+            card = ttk.Frame(self.teamSlotsFrame, padding=10, style='TFrame')
+            card.grid(row=r, column=c, sticky=tk.NSEW, padx=10, pady=10)
+            card.columnconfigure(0, weight=1)
+
+            slotData = self.teamSlots[i]
+
+            #sprite
+            spriteLabel = ttk.Label(card, text='', anchor='center', width=12)
+            spriteLabel.grid(row=0, column=0, sticky=tk.EW, pady=(0, 6))
+
+            #name
+            if slotData:
+                nameText = slotData['name']
+            else:
+                nameText = f'Slot {i+1} (Empty)'
+
+            nameLabel = ttk.Label(card, text=nameText, anchor='center', style='progress.TLabel', wraplength=160)
+            nameLabel.grid(row=1, column=0, sticky=tk.EW)
+
+            #remove button
+            removeButton = ttk.Button(card, text='Remove', style='small.TButton', command=lambda j=i: self.removeTeamSlot(j))
+            removeButton.grid(row=2, column=0, sticky=tk.EW, pady=(4, 0))
+
+            if not slotData:
+                spriteLabel.configure(image='', text='')
+                removeButton.state(['disabled'])
+            else:
+                sprite = self.loadCachedSprite(slotData['spriteURL'], size=(96, 96))
+                if sprite:
+                    spriteLabel.configure(image=sprite)
+                    self.teamSpriteRefs[i] = sprite
+                removeButton.state(['!disabled'])
+            
+            def onClick(event, j=i):
+                self.onSelectTeamSlot(j)
+
+            card.bind('<Button-1>', onClick)
+            spriteLabel.bind('<Button-1>', onClick)
+            nameLabel.bind('<Button-1>', onClick)
+
+    def normaliseMonInput(self, text):
+        text = (text or '').strip()
+
+        if not text:
+            return None
+        if text.isdigit():
+            return int(text)
+        
+        return text.lower().replace(' ', '-')
+    
+    def findNextEmptySlot(self):
+        for i in range(6):
+            if self.teamSlots[i] is None:
+                return i
+        
+        return None
+    
+    #validates whether pokemon exists in the chosen game
+    def monExistsInGame(self, monKey):
+        #tries encounter version and matches to chosen game's pokeAPI version list
+        #if no encounters, fromGen <= selectedGen
+        try:
+            teamMon = TUPitems.Mon('mon', monKey, self.selectedTeamGen)
+            monFromGen = int(teamMon.getItemFromGen())
+
+            if monFromGen > int(self.selectedTeamGen):
+                return False
+            
+        except:
+            return False
+        
+        versions = self.gameVersions.get(self.selectedTeamGame, [])
+        if not versions:
+            return True
+        
+        try:
+            pokemon=pb.pokemon(monKey)
+
+            encounters = getattr(pokemon, 'location_area_encounters', None)
+            if not encounters:
+                return True
+            
+            for i in encounters:
+                for j in getattr(i, 'version_details', []):
+                    versionName = getattr(getattr(j, 'version', None), 'name', None)
+                    if versionName in versions:
+                        return True
+
+            return False
+
+        except:
+            return True
+
+    def onAddTeamMon(self):
+        userIn = self.teamSearchEntry.get()
+        monKey = self.normaliseMonInput(userIn)
+
+        if monKey is None:
+            showinfo('Team Rater', 'Enter a Pokémon name or Dex number.')   
+            return
+        
+        slotIndex = self.findNextEmptySlot()
+        if slotIndex is None:
+            showinfo('Team Rater', 'Your team already has 6 Pokémon. Please remove one first.')
+            return
+        
+        if not self.monExistsInGame(monKey):
+            showinfo('Team Rater', f"That Pokémon isn't valid for {self.selectedTeamGame}.")
+            return
+        
+        try:
+            monObj = TUPitems.Mon('mon', monKey, self.selectedTeamGen)
+        
+        except:
+            showinfo('Team Rater', 'Could not load that Pokémon from the API.')
+            return
+    
+        dexNum = int(monObj.getDexNum())
+        name = self.titleName(monObj.getItemName())
+        spriteURL = monObj.getSpriteURL()
+
+        self.teamSlots[slotIndex] = {'dexNum': dexNum, 'name': name, 'type1': monObj.getType1(), 'type2': monObj.getType2(), 
+                                     'bst': monObj.getBST(), 'spriteURL': spriteURL, 'moves': [None, None, None, None]}
+
+        self.teamSearchEntry.delete(0, 'end')
+        self.showTeamSlots()
+        self.onSelectTeamSlot(slotIndex)
+
+    def removeTeamSlot(self, i):
+        self.teamSlots[i] = None
+        self.showTeamSlots()
+        self.detailsNameLabel.configure(text='Select a Team Slot')
+        self.detailsInfoText.config(state='normal')
+        self.detailsInfoText.delete('1.0', 'end')
+        self.detailsInfoText.configure(state='disabled')
+        self.detailsSpriteLabel.grid_remove()
+        self.detailsSpriteRef = None
+
+    def onSelectTeamSlot(self, i):
+        slotData = self.teamSlots[i]
+        if not slotData:
+            self.detailsNameLabel.configure(text=f'Slot {i+1} (Empty)')
+            self.detailsInfoText.configure(state='normal')
+            self.detailsInfoText.delete('1.0', 'end')
+            self.detailsInfoText.insert('1.0', 'Add a Pokémon to this slot.')
+            self.detailsInfoText.configure(state='disabled')
+            self.detailsSpriteLabel.grid_remove()
+            self.detailsSpriteRef = None
+            return
+        
+        if 'moves' not in slotData:
+            slotData['moves'] = [None, None, None, None]
+
+        #clears previous move UI
+        if hasattr(self, 'teamMovesFrame') and self.teamMovesFrame.winfo_exists():
+            self.teamMovesFrame.destroy()
+
+        self.teamMovesFrame = ttk.Frame(self.detailsFrame, style='TFrame')
+        self.teamMovesFrame.grid(row=3, column=0, sticky=tk.EW, pady=(10, 0))
+
+        for column in range(4):
+            self.teamMovesFrame.columnconfigure(column, weight=1)
+
+        try:
+            validMoves = self.getValidMoves(slotData['dexNum'], self.selectedTeamGen)
+        except:
+            validMoves = []
+
+        moveOptions = ['None'] + [self.titleName(move) for move in validMoves]
+
+        while len(slotData['moves']) < 4:
+            slotData['moves'].append(None)
+
+        self.teamMoveVars = []
+        for moveIndex in range(4):
+            currentMove = slotData['moves'][moveIndex]
+            if not currentMove:
+                current = 'None'
+            else:
+                current = self.titleName(currentMove)
+
+            moveVar = tk.StringVar(value=current)
+            self.teamMoveVars.append(moveVar)
+
+            self.moveMenubutton = ttk.Menubutton(self.teamMovesFrame, text=f'Move {moveIndex+1}', style='filter.TMenubutton')
+            self.moveMenubutton.grid(row=0, column=moveIndex, sticky=tk.EW, padx=4)
+
+            self.moveMenu = tk.Menu(self.moveMenubutton, tearoff=0)
+
+            varList = self.teamMoveVars
+
+            def makeCommand(i, valueLabel):
+                def command():
+                    #saves into slotData as None
+                    if valueLabel == 'None':
+                        slotData['moves'][i] = None
+                        varList[i].set('None')
+                    #otherwise saves into slotData in API format
+                    else:
+                        APIName = valueLabel.lower().replace(' ', '-')
+                        slotData['moves'][i] = APIName
+                        varList[i].set(valueLabel)
+                return command
+        
+            for option in moveOptions:
+                self.moveMenu.add_command(label=option, command=makeCommand(moveIndex, option))
+
+            self.moveMenubutton['menu'] = self.moveMenu
+            self.moveMenubutton.configure(textvariable=moveVar)
+        
+        self.detailsNameLabel.configure(text=slotData['name'])
+
+        typeLine = self.titleName(slotData['type1'])
+        if slotData['type2'] not in (-1, None, '', 'none'):
+            typeLine += ' / ' + self.titleName(slotData['type2'])
+
+        infoText = (
+            f"Dex Number: {slotData['dexNum']}\n"
+            f"Type: {typeLine}\n"
+            f"BST: {slotData['bst']}\n"
+            f"Game: {self.selectedTeamGame}\n"
+            f"Generation: {self.selectedTeamGen}\n"
+        )
+
+        self.detailsInfoText.configure(state='normal')
+        self.detailsInfoText.delete('1.0', 'end')
+        self.detailsInfoText.insert('1.0', infoText)
+        self.detailsInfoText.configure(state='disabled')
+
+        sprite = self.loadCachedSprite(slotData['spriteURL'], size=(256, 256))
+
+        if sprite:
+            self.detailsSpriteLabel.grid()
+            self.detailsSpriteLabel.configure(image=sprite)
+            self.detailsSpriteRef = sprite
+        else:
+            self.detailsSpriteLabel.grid_remove()
+            self.detailsSpriteRef = None
+    
+    def getMoveTypeCached(self, moveName):
+        if not moveName:
+            return None
+        
+        moveKey = str(moveName).strip().lower().replace(' ', '-')
+
+        if not hasattr(self, 'moveTypeCache'):
+            self.moveTypeCache = {}
+
+        if moveKey in self.moveTypeCache:
+            return self.moveTypeCache[moveKey]
+        
+        try:
+            moveObj = pb.move(moveKey)
+            moveType = getattr(getattr(moveObj, 'type', None), 'name', None)
+            self.moveTypeCache[moveKey] = moveType
+            return moveType
+        
+        except:
+            self.moveTypeCache[moveKey] = None
+            return None
+
+    def onTeamAnalyse(self):
+        report = TUPteamrater.analyseTeam(teamSlots=self.teamSlots, moveTypeLookup=self.getMoveTypeCached)
+
+        self.detailsNameLabel.configure(text='Team Analysis')
+        self.detailsInfoText.configure(state='normal')
+        self.detailsInfoText.delete('1.0', 'end')
+        self.detailsInfoText.insert('1.0', report)
+        self.detailsInfoText.configure(state='disabled')
+        self.detailsSpriteLabel.grid_remove()
+        self.detailsSpriteRef = None
+
+    def getAPINameList(self, endpoint):
+        if not hasattr(self, 'apiNameCache'):
+            self.apiNameCache = {}
+
+        if endpoint in self.apiNameCache:
+            return self.apiNameCache[endpoint]
+        
+        url = f"https://pokeapi.co/api/v2/{endpoint}?limit=5000"
+
+        try:
+            data = requests.get(url, timeout=10).json()
+            names = [item['name'] for item in data.get('results', [])]
+            self.apiNameCache[endpoint] = names
+            return names
+        except:
+            self.apiNameCache[endpoint] = []
+            return []
+        
+    def getAllowedVersionGroups(self, genNum):
+        if not hasattr(self, 'allowedVersionGroupsCache'):
+            self.allowedVersionGroupsCache = {}
+        
+        if genNum in self.allowedVersionGroupsCache:
+            return self.allowedVersionGroupsCache[genNum]
+        
+        gen = pb.generation(genNum)
+        groups = set(versionGroup.name for versionGroup in gen.version_groups)
+
+        self.allowedVersionGroupsCache[genNum] = groups
+        
+        return groups
+    
+    def getValidMoves(self, monKey, genNum):
+        cacheKey = (str(monKey), int(genNum))
+        if not hasattr(self, 'validMovesCache'):
+            self.validMovesCache = {}
+
+        if cacheKey in self.validMovesCache:
+            return self.validMovesCache[cacheKey]
+        
+        allowedGroups = self.getAllowedVersionGroups(genNum)
+
+        mon = pb.pokemon(monKey)
+        valid = set()
+
+        for m in mon.moves:
+            moveName = m.move.name
+            for i in m.version_group_details:
+                if i.version_group.name in allowedGroups:
+                    valid.add(moveName)
+                    break
+
+        validList = sorted(valid)
+        self.validMovesCache[cacheKey] = validList
+
+        return validList
+        
     #show login screen
     def showLogin(self):
         self.clearWindow()
@@ -1299,34 +1855,6 @@ class mainWindow(tk.Tk):
             self.loginErrorLabel.config(text='Username already exists')
             self.loginErrorFrame.grid(row=5, column=2, padx=20, pady=10, sticky=tk.EW)
             self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
-
-    #make filter criteria
-    def makePokedexCriteria(self):
-        if hasattr(self, 'searchEntry'):
-            name = self.searchEntry.get().strip()
-        else:
-            name = ''
-        
-        #maps to numeric ranges
-        heightMap = {'Any': (None, None), 'Small': (0.0, 1.0), 'Medium': (1.0, 2.0), 'Large': (2.0, 100.0),}
-        weightMap = {'Any': (None, None), 'Light': (0.0, 25.0), 'Medium': (25.0, 100.0), 'Heavy': (100.0, 10000.0),}
-        bstMap = {'Any': (None, None), 'Low': (0, 300), 'Medium': (300, 500), 'High': (500, 9999),}
-
-        heightMin, heightMax = heightMap.get(self.heightClassVar.get(), (None, None))
-        weightMin, weightMax = weightMap.get(self.weightClassVar.get(), (None, None))
-        bstMin, bstMax = bstMap.get(self.bstRangeVar.get(), (None, None))
-
-        type1 = self.type1Var.get().strip()
-        type2 = self.type2Var.get().strip()
-
-        if type1 in ("", "Any"):
-            type1 = None
-        if type2 in ("", "Any"):
-            type2 = None
-
-        criteria = {'name': name if name else None, 'type1': type1, 'type2': type2, 'heightMin': heightMin, 'heightMax': heightMax, 'weightMin': weightMin, 'weightMax': weightMax, 'bstMin': bstMin, 'bstMax': bstMax,}
-
-        return criteria
 
     #clears window
     def clearWindow(self):

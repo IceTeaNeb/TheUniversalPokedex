@@ -129,16 +129,19 @@ def addDex(dexID, gen, version):
     conn.close()
 
 #add a Pokémon to tblMon
-def addMon(dexNum, monName, species, type1, type2, height, weight, BST, catchRate, eggGroups, gender, eggCycle, evo, preEvo, flavorText, location, sprite):
+def addMon(dexNum, monName, species, type1, type2, height, weight, BST, catchRate, eggGroups,
+            gender, eggCycle, evo, preEvo, flavorText, location, sprite):
     #connects to database
     conn = sqlite3.connect('TUP.db')
     curs = conn.cursor()
 
     curs.execute('''
-        INSERT INTO tblMon (DexNum, MonName, Species, Type1, Type2, Height, Weight, BST, CatchRate, EggGroups, Gender, EggCycle, Evo, PreEvo, FlavorText, Location, SpriteURL)
+        INSERT INTO tblMon (DexNum, MonName, Species, Type1, Type2, Height, Weight, BST, CatchRate,
+                  EggGroups, Gender, EggCycle, Evo, PreEvo, FlavorText, Location, SpriteURL)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''',
-        (dexNum, monName, species, type1, type2, height, weight, BST, catchRate, eggGroups, gender, eggCycle, evo, preEvo, flavorText, location, sprite)
+        (dexNum, monName, species, type1, type2, height, weight, BST, catchRate, eggGroups,
+          gender, eggCycle, evo, preEvo, flavorText, location, sprite)
     )
 
     monID = curs.lastrowid
@@ -537,8 +540,3 @@ def checkLogin(username, password):
         return True, storedUserID
     else:
         return False, None
-    
-
-
-#------------------------------------#
-#TUPitems.outMon()

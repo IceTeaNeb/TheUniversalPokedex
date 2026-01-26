@@ -21,6 +21,8 @@ def searchEncyclopedia(criteria, limit=200):
     query = (criteria.get('query') or '').strip().lower()
     gen = criteria.get('gen', 'Any')
     typeName = (criteria.get('type') or '').strip().lower()
+    if typeName in ('', 'any', None):
+        typeName = None
 
     #if user typed something
     if query:
@@ -45,14 +47,26 @@ def searchEncyclopedia(criteria, limit=200):
                 return [(moveID, name, None)]
             
             if itemType == 'Ability':
-                if not query.isdigit():
-                    a = pb.ability(query)
-                else:
-                    m = pb.ability(int(query))
-                abilID = int(a.id)
-                name = str(a.name).replace('-', ' ').title()
-                return [(abilID, name, None)]
-        
+                rows = []
+                if gen == 'Any':
+                    try:
+                        abilityList = pb.ability()
+                        for entry in abilityList[:limit]:
+                            abilID = parseIDFromURL(getattr(entry, 'url', None))
+                            if abilID:
+                                name = str(entry.name).replace('-', ' ').title()
+                                rows.append((abilID, name, None))
+                    except:
+                        return []
+                    
+                    return rows
+                
+                g = pb.generation(int(gen))
+                for i in g.abilities[:limit]:
+                    abilID = parseIDFromURL(getattr(i, 'url', None))
+                    if abilID:
+                        rows.append((abilID, str(i.name).replace('-', ' ').title(), None))
+
         except:
             return []
         
@@ -76,13 +90,13 @@ def searchEncyclopedia(criteria, limit=200):
 
         #filter by type
         if typeName:
-            t = pb.type(typeName)
+            t = pb.type_(typeName)
             typeDict = {}
             for i in t.pokemon:
                 p = i.pokemon
-                dexNum = parseIDFromURL(getattr(i, 'url', None))
+                dexNum = parseIDFromURL(getattr(p, 'url', None))
                 if dexNum:
-                    typeDict[i.name] = dexNum
+                    typeDict[p.name] = dexNum
 
             if candidates is None:  
                 candidates = typeDict
@@ -113,7 +127,7 @@ def searchEncyclopedia(criteria, limit=200):
 
         #filter by type
         if typeName:
-            t = pb.type(typeName)
+            t = pb.type_(typeName)
             typeDict = {}
             for i in t.moves:
                 moveID = parseIDFromURL(getattr(i, 'url', None))
@@ -130,7 +144,7 @@ def searchEncyclopedia(criteria, limit=200):
         
         rows = []
         for name, moveID in getFirstN(sorted(candidates.items(), key=lambda x: x[1])):
-            rows.append((moveID, str(name).replace('-', ' ').title(), spriteURLFromDexNum(dexNum)))
+            rows.append((moveID, str(name).replace('-', ' ').title(), None))
         return rows
     
     #ability list
