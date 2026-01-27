@@ -2,6 +2,7 @@
 
 #------------------imports---------------------#
 from TUPtrainers import TRAINERSBYGAME
+import TUPitems
 
 #----------------------------------------------#
 ALLTYPES = ['normal','fire','water','electric','grass','ice','fighting','poison',
@@ -260,8 +261,6 @@ def getTrainerReport(teamSlots, gameKey, moveTypeLookup=None):
     mons = [mon for mon in teamSlots if mon]
 
     lines = []
-    lines.append(f'Game Key: {gameKey}')
-    lines.append(f'Team Size: {stats["teamSize"]}/6\n')
     
     lines.append('GYM MATCHUPS:')
     for gym in data.get('gyms', []):
@@ -296,3 +295,126 @@ def getTrainerReport(teamSlots, gameKey, moveTypeLookup=None):
         lines.append(f'   - Weakness: {result["weakMons"]}/{stats["teamSize"]} team members\n')
 
     return '\n'.join(lines)
+
+def strongAgainst(defType):
+    strong = []
+    for atk in ALLTYPES:
+        if getTypeMultiplier(atk, defType) >= 2.0:
+            strong.append(atk)
+    return strong
+
+def resists(atkType, defType1, defType2):
+    mult = getDamageTakenMult(atkType, defType1, defType2)
+    
+    #return True if resists/immune otherwise False
+    return mult == 0.0 or mult <= 0.5
+
+def getRecommendedMons(teamSlots, chosenGen, gameVersions=None, limit=10, moveTypeLookup=None):
+    #step 1: find team's missing offensive coverage
+    #step 2: find top weaknesses
+    #step 3: set of desired types to search
+    #step 4: list candidates
+    #step 5: score candidates
+
+    gen = int(chosenGen)
+    stats = getTeamAnalysisStats(teamSlots, moveTypeLookup)
+    if stats.get('teamSize', 0) == 0:
+        return []
+    
+    teamDexNums = set(mon.get('dexNum') for mon in teamSlots if mon)
+    teamNamesLower = set((mon.get('name') or '').strip().lower() for mon in teamSlots if mon)
+
+    #step 1
+    missingCoverage = [t for t in ALLTYPES if stats['coverage'].get(t, 0) == 0]
+
+    #step 2
+    sortedWeak = sorted(stats['weak'].items(), key=lambda x: x[1], reverse=True)
+    topWeakTypes = [t for t, i in sortedWeak[:3]]
+
+    #step 3
+    desiredTypes = set()
+
+    for t in missingCoverage[:4]:
+        desiredTypes.add(t)
+
+    for weak in topWeakTypes:
+        for atk in strongAgainst(weak):
+            desiredTypes.add(atk)
+
+    #step 4
+    candidates = []
+    seenDex = set()
+
+    for t in desiredTypes:
+        #uses same search as in encyclopedia
+        criteria = {'itemType': 'Pokémon', 'query': '', 'gen': str(gen), 'type': t}
+        rows = TUPitems.searchEncyclopedia(criteria, limit=25)
+        for dexNum, displayName, spriteURL in rows:
+            if dexNum in teamDexNums or dexNum in seenDex:
+                continue #skips to next loop
+            seenDex.add(dexNum)
+            candidates.append((dexNum, displayName, spriteURL))
+
+    #step 5
+    recommended = []
+    for dexNum, displayName, spriteURL in candidates:
+        try:
+            monObj = TUPitems.Mon('mon', int(dexNum), gen)
+            monName = (monObj.getItemName() or '').strip().lower()
+            if monName and monName in teamNamesLower:
+                continue
+
+            type1 = normaliseType(monObj.getType1())
+            type2 = normaliseType(monObj.getType2())
+            bst = int(monObj.getBST())
+
+            atkTypes = [t for t in [type1, type2] if t and t != 'none' and t != -1]
+
+            #how many missing types can this mon hit for super effective
+            coverageGain = 0
+            for missing in missingCoverage:
+                best = 1.0
+                for atk in atkTypes:
+                    best = max(best, getTypeMultiplier(atk, missing))
+                if best >= 2.0:
+                    coverageGain += 1
+            
+            #defensive score
+            resistCount = 0
+            weakList = []
+            for weak in topWeakTypes:
+                if resists(weak, type1, type2):
+                    resistCount += 1
+                    weakList.append(weak)
+            
+            #weighted scoring:
+            #offense > defense > power
+            score = (coverageGain*10) + (resistCount*6) + (bst/120.0)
+
+            reasons = []
+            if coverageGain > 0:
+                reasons.append(f'adds coverage against {coverageGain} missing types')
+            if resistCount > 0:
+                reasons.append('resists ' + ', '.join(titleName(weak) for weak in weakList))
+            if not reasons:
+                reasons.append('high BST option')
+
+            recommended.append({
+                'id': int(dexNum),
+                'name': displayName,
+                'spriteURL': spriteURL,
+                'type1': type1,
+                'type2': type2,
+                'bst': bst,
+                'coverageGain': coverageGain,
+                'resistCount': resistCount,
+                'score': score,
+                'reason': '; '.join(reasons)
+            })
+        except:
+            continue
+    
+    recommended.sort(key=lambda i: i['score'], reverse=True)
+    return recommended[:limit]
+
+

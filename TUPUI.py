@@ -29,42 +29,29 @@ class mainWindow(tk.Tk):
 
         self.currentUserID = None
 
-        #default colour is light blue
-        self.colours = {'bgcolor': '#c1dbf3', 'fgcolor': '#ffffff', 'activecolor': '#97c7f3', 'framecolor': '#deebf7', 'darkcolor': '#d9d9d9'}
+        #default theme is dark blue
+        self.colours = {'bgcolor': '#7f7f7f', 'fgcolor': '#c1dbf3', 
+                           'activecolor': '#595959', 'framecolor': '#404040', 
+                           'darkcolor': '#232323', 'rootbg': '#232323'}
 
-        #light red colour
-        def lightRedMode():
-            self.colours['bgcolor'] = '#ff7171'
-            self.colours['fgcolor'] = '#ffffff'
-            self.colours['activecolor'] = '#ff5252'
-            self.colours['framecolor'] = '#ffabab'
-            self.colours['darkcolor'] = '#d9d9d9'
-            #self.configure(background='#ffc8c8')          
+        self.themes = {
+            'Light Blue': {'bgcolor': '#c1dbf3', 'fgcolor': '#ffffff', 
+                           'activecolor': '#97c7f3', 'framecolor': '#deebf7', 
+                           'darkcolor': '#d9d9d9', 'rootbg': '#ffffff'},
+            'Light Red': {'bgcolor': '#ff7171', 'fgcolor': '#ffffff', 
+                           'activecolor': '#ff4444', 'framecolor': '#d9d9d9', 
+                           'darkcolor': '#bfbfbf', 'rootbg': '#ffffff'},
+            'Dark Blue': {'bgcolor': '#7f7f7f', 'fgcolor': '#c1dbf3', 
+                           'activecolor': '#595959', 'framecolor': '#404040', 
+                           'darkcolor': '#232323', 'rootbg': '#232323'},
+            'Dark Red': {'bgcolor': '#7f7f7f', 'fgcolor': '#ff7171', 
+                           'activecolor': '#595959', 'framecolor': '#404040', 
+                           'darkcolor': '#232323', 'rootbg': '#232323'},
+        }
 
-        #dark blue colour
-        def darkBlueMode():
-            self.colours['bgcolor'] = '#7f7f7f'
-            self.colours['fgcolor'] = '#c1dbf3'
-            self.colours['activecolor'] = '#595959'
-            self.colours['framecolor'] = '#404040'
-            self.colours['darkcolor'] = '#232323'
-            self.configure(background='#232323')
-
-        #dark red colour
-        def darkRedMode():
-            self.colours['bgcolor'] = '#7f7f7f'
-            self.colours['fgcolor'] = '#ff7171'
-            self.colours['activecolor'] = '#595959'
-            self.colours['framecolor'] = '#404040'
-            self.colours['darkcolor'] = '#232323'
-            self.configure(background='#232323')
-        
-        #lightRedMode()
-        darkBlueMode()
-        #darkRedMode()
+        self.themeVar = tk.StringVar(value='Change Theme')
 
         self.FONT = 'Pokemon X and Y'
-        self.widgetOptions = {'background': self.colours['bgcolor'], 'foreground': self.colours['fgcolor'], 'font': (self.FONT, 40)}
 
         #fullscreen
         self.attributes('-fullscreen', True) #window becomes fullscreen automatically
@@ -97,15 +84,10 @@ class mainWindow(tk.Tk):
         self.styleSmallB.configure('small.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
         self.styleSmallB.map('small.TButton', background=[('active', self.colours['activecolor'])])
 
-        #progressbar styles
-        self.stylePb = ttk.Style()
-        self.stylePb.theme_use('clam')
-        self.stylePb.configure('TProgressbar', background=self.colours['activecolor'], troughcolor=self.colours['bgcolor'], bordercolor=self.colours['bgcolor'])
-
         #label styles
         self.styleL = ttk.Style()
         self.styleL.theme_use('clam')
-        self.styleL.configure('TLabel', **self.widgetOptions)
+        self.styleL.configure('TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 40), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
 
         self.styleProgressL = ttk.Style()
         self.styleProgressL.theme_use('clam')
@@ -127,23 +109,26 @@ class mainWindow(tk.Tk):
         self.styleMB.map('filter.TMenubutton', background=[('active', self.colours['activecolor'])])
 
         #light main menu large icons
-        self.buttonMenuBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'pokeballIconLight.png')))
-        self.buttonMenuBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'encyclopediaIconLight.png')))
-        self.buttonMenuArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'teamraterIconLight.png')))
-        self.buttonMenuExitIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'exitIconLight.png')))
+        self.buttonMenuBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'pokeballIconLight.png.png')))
+        self.buttonMenuBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'encyclopediaIconLight.png.png')))
+        self.buttonMenuArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'teamraterIconLight.png.png')))
+        self.buttonMenuExitIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'exitIconLight.png.png')))
+        self.buttonMenuChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'typechartIconLight.png.png')))
 
         #light side menu small icons
-        self.buttonSideBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'pokeballIconLightSmall.png')))
-        self.buttonSideBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'encyclopediaIconLightSmall.png')))
-        self.buttonSideArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'teamraterIconLightSmall.png')))
-        self.buttonSideHouseIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'menuIconLight.png')))
-        self.buttonSideChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'typechartIconLight.png')))
+        self.buttonSideBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'pokeballIconLightSmall.png.png')))
+        self.buttonSideBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'encyclopediaIconLightSmall.png.png')))
+        self.buttonSideArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'teamraterIconLightSmall.png.png')))
+        self.buttonSideHouseIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'menuIconLight.png.png')))
+        self.buttonSideChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'typechartIconLightSmall.png.png')))
 
         #type chart images
         self.typeChartImage = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'chart', 'pokemon-type-chart2.png')))
 
         #sprite cache to reduce loading times
         self.spriteCache = {}
+
+        self.applyTheme(self.themeVar.get())
 
         #filter
         self.type1Var = tk.StringVar(value='Any')
@@ -269,12 +254,16 @@ class mainWindow(tk.Tk):
         self.sideMenuFrame.columnconfigure(0, weight=1)
         self.sideMenuFrame.rowconfigure(0, weight=10)
         self.sideMenuFrame.rowconfigure(1, weight=1)
+        self.sideMenuFrame.rowconfigure(2, weight=1)
 
-        self.buttonChart = ttk.Button(self.sideMenuFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonChart = ttk.Button(self.sideMenuFrame, text='Type Chart', image=self.buttonMenuChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
         self.buttonChart.grid(column=0, row=0, sticky=tk.NSEW, padx=15, pady=15)
 
+        self.themeMenu = ttk.OptionMenu(self.sideMenuFrame, self.themeVar, self.themeVar.get(), *self.themes.keys(), command=lambda choice: self.applyTheme(choice), style='filter.TMenubutton')
+        self.themeMenu.grid(column=0, row=1, sticky=tk.NSEW, padx=15, pady=15)
+
         self.buttonExit = ttk.Button(self.sideMenuFrame, text='Exit Program', image=self.buttonMenuExitIcon, compound=tk.LEFT, command=self.destroy, style='main.TButton')
-        self.buttonExit.grid(row=1, column=0, sticky=tk.NSEW, padx=15, pady=15)
+        self.buttonExit.grid(row=2, column=0, sticky=tk.NSEW, padx=15, pady=15)
 
         #packing side menu frame
         self.sideMenuFrame.grid(column=1, row=1, sticky=tk.NSEW, padx=15, pady=15)
@@ -287,7 +276,7 @@ class mainWindow(tk.Tk):
         self.columnconfigure(1, weight=5)
 
         self.titleOptions = {'column': 0, 'row': 0, 'columnspan': 2, 'padx': 15, 'pady': 15, 'sticky': tk.EW}
-        self.titleLabel = ttk.Label(self, text='The Universal Pokédex', anchor = 'center')
+        self.titleLabel = ttk.Label(self, text='The Universal Pokédex', anchor = 'center', style='TLabel')
         self.titleLabel.grid(**self.titleOptions)
 
     #make secondary screen for Pokédex, Encyclopedia, Team Rater, Type Chart
@@ -614,7 +603,7 @@ class mainWindow(tk.Tk):
         scrollOuterFrame.columnconfigure(0, weight=1)
 
         #canvas
-        resultCanvas = tk.Canvas(scrollOuterFrame, highlightthickness=0, bg=self.colours['framecolor'])
+        resultCanvas = tk.Canvas(scrollOuterFrame, highlightthickness=0, bg=self.colours['bgcolor'])
         resultCanvas.grid(row=0, column=0, sticky=tk.NSEW)
 
         #scrollbar
@@ -1141,7 +1130,7 @@ class mainWindow(tk.Tk):
         self.detailsInfoScrollbar = ttk.Scrollbar(self.detailsInfoOuterFrame, orient='vertical')
         self.detailsInfoScrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['framecolor'], fg=self.colours['fgcolor'], font=(self.FONT, 12), relief='flat', highlightthickness=0, padx=8, pady=8)
+        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['bgcolor'], fg=self.colours['fgcolor'], font=(self.FONT, 12), relief='flat', highlightthickness=0, padx=8, pady=8)
         self.detailsInfoText.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.detailsInfoScrollbar.configure(command=self.detailsInfoText.yview)
@@ -1396,8 +1385,13 @@ class mainWindow(tk.Tk):
 
         self.showTeamSlots()
 
+        #continue button
         self.teamContinueButton = ttk.Button(self.mainFrame, text='Analyse Team', style='enter.TButton', command=self.onTeamAnalyse)
-        self.teamContinueButton.grid(row=0, column=0, columnspan=2, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+        self.teamContinueButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+
+        #recommend button
+        self.teamRecommendButton = ttk.Button(self.mainFrame, text='Recommend', style='enter.TButton', command=self.onTeamRecommend)
+        self.teamRecommendButton.grid(row=0, column=1, sticky=tk.EW, pady=(15, 10), padx=(10, 10))
 
     def showTeamSlots(self):
         for widget in self.teamSlotsFrame.winfo_children():
@@ -1681,7 +1675,38 @@ class mainWindow(tk.Tk):
         }
 
         return GAMEKEYMAP.get(self.selectedTeamGame, self.gameVersions.get(self.selectedTeamGame, [None])[0])
+    
+    def onTeamRecommend(self):
+        teamSlots = self.teamSlots
+        chosenGen = self.selectedTeamGen
+        recommended = TUPteamrater.getRecommendedMons(teamSlots=teamSlots, chosenGen=chosenGen, moveTypeLookup=self.getMoveTypeCached)
 
+        lines = []
+        lines.append('RECOMMENDATIONS:\n')
+
+        if not recommended:
+            lines.append('No recommendations available. Add Pokémon first, or your team already has good coverage.')
+        else:
+            for r in recommended:
+                type1 = self.titleName(r.get('type1'))
+                type2 = self.titleName(r.get('type2'))
+                if type2:
+                    typeLine = f'{type1} / {type2}'
+                else:
+                    typeLine = f'{type1}'
+    
+                lines.append(f"- {r['name']} ({typeLine})")
+                lines.append(f"   - BST: {r['bst']}")
+                lines.append(f"   - {r['reason']}")
+
+            self.detailsNameLabel.configure(text='Team Recommendations')
+            self.detailsInfoText.config(state='normal')
+            self.detailsInfoText.delete('1.0', 'end')
+            self.detailsInfoText.insert('1.0', '\n'.join(lines))
+            self.detailsInfoText.configure(state='disabled')
+            self.detailsSpriteLabel.configure(image='')
+            self.detailsSpriteLabel.grid_remove()
+            self.detailsSpriteRef = None
 
     def getAPINameList(self, endpoint):
         if not hasattr(self, 'apiNameCache'):
@@ -1864,6 +1889,36 @@ class mainWindow(tk.Tk):
             self.loginErrorFrame.grid(row=5, column=2, padx=20, pady=10, sticky=tk.EW)
             self.loginErrorLabel.grid(row=0, column=0, pady=5, sticky=tk.EW)
 
+    def applyTheme(self, themeName):
+        theme = self.themes.get(themeName, self.themes['Dark Blue'])
+
+        self.colours.update({
+            'bgcolor': theme['bgcolor'], 'fgcolor': theme['fgcolor'],
+            'activecolor': theme['activecolor'], 'framecolor': theme['framecolor'],
+            'darkcolor': theme['darkcolor']
+        })
+
+        #window background
+        self.configure(background=theme.get('rootbg', self.colours['darkcolor']))
+
+        #update styles
+        self.styleF.configure('TFrame', background=self.colours['framecolor'])
+        self.styleMainB.configure('main.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 35), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleMainB.map('main.TButton', background=[('active', self.colours['activecolor'])])
+        self.styleEnterB.configure('enter.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), bordercolor=self.colours['bgcolor'])
+        self.styleEnterB.map('enter.TButton', background=[('active', self.colours['activecolor'])])
+        self.styleSmallB.configure('small.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleSmallB.map('small.TButton', background=[('active', self.colours['activecolor'])])
+        self.styleL.configure('TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 40), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleProgressL.configure('progress.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 10))
+        self.styleSmallL.configure('small.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 28))
+        self.styleE.configure('TEntry', fieldbackground=self.colours['bgcolor'], foreground=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
+        self.styleMB.configure('filter.TMenubutton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), arrowcolor=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
+        self.styleMB.map('filter.TMenubutton', background=[('active', self.colours['activecolor'])])
+
+        if hasattr(self, 'detailsInfoText'):
+            self.detailsInfoText.configure(bg=self.colours['bgcolor'], fg=self.colours['fgcolor'])
+
     #clears window
     def clearWindow(self):
         for widget in self.winfo_children():
@@ -1894,25 +1949,6 @@ class mainWindow(tk.Tk):
         titleOptions = {'column': 1, 'row': 0, 'padx': 15, 'pady': 15, 'sticky': tk.EW}
         self.titleLabel = ttk.Label(self, text=text, anchor = 'center')
         self.titleLabel.grid(**titleOptions)
-
-    # def showProgressBar(self):
-    #     #progress bar
-    #     self.progressBarFrame = ttk.Frame(self.mainFrame)
-    #     self.progressBarFrame.columnconfigure(0, weight=5)
-    #     self.progressBarFrame.columnconfigure(1, weight=1)
-
-    #     self.progressBar = ttk.Progressbar(self.progressBarFrame, mode='indeterminate')
-    #     self.progressBar.grid(row=0, column=0, sticky=tk.NSEW, pady=15)
-
-    #     self.progressBarText = ttk.Label(self.progressBarFrame, text='Loading...', style='progress.TLabel', anchor='center')
-    #     self.progressBarText.grid(row=0, column=1, sticky=tk.NSEW, pady=15)
-
-    #     self.progressBarFrame.grid(column=1, row=2, columnspan=2, sticky=tk.NSEW)
-    #     self.progressBar.start()
-
-    # def hideProgressBar(self):
-    #     self.progressBar.stop()
-    #     self.progressBarFrame.destroy()
 
     #shows main menu
     def showMainMenu(self):
