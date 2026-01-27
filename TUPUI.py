@@ -63,8 +63,8 @@ class mainWindow(tk.Tk):
         darkBlueMode()
         #darkRedMode()
 
-        self.FONT = 'Trebuchet MS'
-        self.widgetOptions = {'background': self.colours['bgcolor'], 'foreground': self.colours['fgcolor'], 'font': (self.FONT, 40, 'bold')}
+        self.FONT = 'Pokemon X and Y'
+        self.widgetOptions = {'background': self.colours['bgcolor'], 'foreground': self.colours['fgcolor'], 'font': (self.FONT, 40)}
 
         #fullscreen
         self.attributes('-fullscreen', True) #window becomes fullscreen automatically
@@ -84,17 +84,17 @@ class mainWindow(tk.Tk):
         #button styles
         self.styleMainB = ttk.Style()
         self.styleMainB.theme_use('clam')
-        self.styleMainB.configure('main.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 35, 'bold'), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleMainB.configure('main.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 35), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
         self.styleMainB.map('main.TButton', background=[('active', self.colours['activecolor'])])
         
         self.styleEnterB = ttk.Style()
         self.styleEnterB.theme_use('clam')
-        self.styleEnterB.configure('enter.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15, 'bold'), bordercolor=self.colours['bgcolor'])
+        self.styleEnterB.configure('enter.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), bordercolor=self.colours['bgcolor'])
         self.styleEnterB.map('enter.TButton', background=[('active', self.colours['activecolor'])])
 
         self.styleSmallB = ttk.Style()
         self.styleSmallB.theme_use('clam')
-        self.styleSmallB.configure('small.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15, 'bold'), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
+        self.styleSmallB.configure('small.TButton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), bordercolor=self.colours['bgcolor'], darkcolor=self.colours['darkcolor'])
         self.styleSmallB.map('small.TButton', background=[('active', self.colours['activecolor'])])
 
         #progressbar styles
@@ -109,11 +109,11 @@ class mainWindow(tk.Tk):
 
         self.styleProgressL = ttk.Style()
         self.styleProgressL.theme_use('clam')
-        self.styleProgressL.configure('progress.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 10, 'bold'))
+        self.styleProgressL.configure('progress.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 10))
 
         self.styleSmallL = ttk.Style()
         self.styleSmallL.theme_use('clam')
-        self.styleSmallL.configure('small.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 28, 'bold'))
+        self.styleSmallL.configure('small.TLabel', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 28))
 
         #entry styles
         self.styleE = ttk.Style()
@@ -123,7 +123,7 @@ class mainWindow(tk.Tk):
         #menubutton styles
         self.styleMB = ttk.Style()
         self.styleMB.theme_use('clam')
-        self.styleMB.configure('filter.TMenubutton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15, 'bold'), arrowcolor=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
+        self.styleMB.configure('filter.TMenubutton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), arrowcolor=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
         self.styleMB.map('filter.TMenubutton', background=[('active', self.colours['activecolor'])])
 
         #light main menu large icons
@@ -364,7 +364,7 @@ class mainWindow(tk.Tk):
         self.deleteButton.state(["disabled"])
 
         #search entry
-        self.searchEntry = ttk.Entry(self.mainFrame, font = ('Trebuchet MS', 20, 'bold'))
+        self.searchEntry = ttk.Entry(self.mainFrame, font = ('Trebuchet MS', 20))
         self.searchEntry.grid(row=0, column=2, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
         self.searchEntry.bind('<Return>', lambda e: self.refreshPokedexResults())
 
@@ -427,7 +427,7 @@ class mainWindow(tk.Tk):
         self.makeTitle("Encyclopedia")
 
         #search entry
-        self.encycSearchEntry = ttk.Entry(self.mainFrame, font=(self.FONT, 20, 'bold'))
+        self.encycSearchEntry = ttk.Entry(self.mainFrame, font=(self.FONT, 20))
         self.encycSearchEntry.grid(row=0, column=2, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
         self.encycSearchEntry.bind('<Return>', lambda e: self.refreshEncyclopediaResults())
 
@@ -789,6 +789,10 @@ class mainWindow(tk.Tk):
             return
         if not hasattr(self, 'encycSearchEntry') or not self.encycSearchEntry.winfo_exists():
             return
+        
+        #types do not apply to abilities
+        if self.encycItemTypeVar.get() == 'Ability' and self.encycTypeVar.get() != 'Any':
+            self.encycTypeVar.set('Any')
 
         criteria = {'itemType': self.encycItemTypeVar.get(),
                     'gen': self.encycGenVar.get(),
@@ -1135,7 +1139,7 @@ class mainWindow(tk.Tk):
         self.detailsInfoScrollbar = ttk.Scrollbar(self.detailsInfoOuterFrame, orient='vertical')
         self.detailsInfoScrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['framecolor'], fg=self.colours['fgcolor'], font=(self.FONT, 10, 'bold'), relief='flat', highlightthickness=0, padx=8, pady=8)
+        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['framecolor'], fg=self.colours['fgcolor'], font=(self.FONT, 10), relief='flat', highlightthickness=0, padx=8, pady=8)
         self.detailsInfoText.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.detailsInfoScrollbar.configure(command=self.detailsInfoText.yview)
@@ -1371,7 +1375,7 @@ class mainWindow(tk.Tk):
         self.makeDetailsFrame(headerText='Select a Team Slot', framePady=(0, 15), gridRow=1, rowSpan=3)
 
         #entry button
-        self.teamSearchEntry = ttk.Entry(self.mainFrame, font=(self.FONT, 20, 'bold'))
+        self.teamSearchEntry = ttk.Entry(self.mainFrame, font=(self.FONT, 20))
         self.teamSearchEntry.grid(row=0, column=2, sticky=tk.EW, pady=(15, 10), padx=(0 ,10))
         self.teamSearchEntry.bind('<Return>', lambda e: self.onAddTeamMon())
 

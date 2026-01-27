@@ -86,7 +86,7 @@ def analyseTeam(teamSlots, moveTypeLookup=None):
 
     #create analysis report
     lines = []
-    lines.append(f'Team Size: {stats['teamSize']}/6\n')
+    lines.append(f"Team Size: {stats['teamSize']}/6\n")
 
     #type overlap
     lines.append('Type Overlaps:')
@@ -186,4 +186,4 @@ def getTeamAnalysisStats(teamSlots, moveTypeLookup=None):
 
     return {'typeCounts': typeCounts, 'weak': weak, 'resist': resist, 'immune': immune, 'coverage': coverage, 'teamSize': len(mons)}
 
-def analyseTrainers(teamSlots, gameKey, moveTypeLookup=None):
+#def analyseTrainers(teamSlots, gameKey, moveTypeLookup=None):

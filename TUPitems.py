@@ -33,6 +33,11 @@ def searchEncyclopedia(criteria, limit=200):
                 else:
                     p = pb.pokemon(int(query))
 
+                if gen != 'Any':
+                    fromGen = pb.pokemon_species(int(p.id)).generation.id
+                    if int(gen) != int(fromGen):
+                        return []
+
                 dexNum = int(p.id)
                 name = str(p.name).replace('-', ' ').title()
                 return [(dexNum, name, spriteURLFromDexNum(dexNum))]
@@ -42,6 +47,12 @@ def searchEncyclopedia(criteria, limit=200):
                     m = pb.move(query)
                 else:
                     m = pb.move(int(query))
+
+                if gen != 'Any':
+                    fromGen = m.generation.id
+                    if int(gen) != int(fromGen):
+                        return []
+
                 moveID = int(m.id)
                 name = str(m.name).replace('-', ' ').title()
                 return [(moveID, name, None)]
