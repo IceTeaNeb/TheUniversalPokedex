@@ -659,9 +659,12 @@ class mainWindow(tk.Tk):
         self.resultSpriteRefs = {}
 
         #grid settings
-        self.columns = 4
+        self.columns = 3
         self.cardPadX = 10
         self.cardPadY = 10
+
+        for column in range(self.columns):
+            self.resultsInnerFrame.columnconfigure(column, weight=1, uniform='resultsCols')
 
         #for each Pokémon that matches criteria
         for index, (dexMonID, monName, spriteURL) in enumerate(rows):
@@ -671,8 +674,6 @@ class mainWindow(tk.Tk):
             #card frame
             self.card = ttk.Frame(self.resultsInnerFrame, padding=8, style='TFrame')
             self.card.grid(row=self.cardRow, column=self.cardColumn, sticky=tk.NSEW, padx=self.cardPadX, pady=self.cardPadY)
-
-            self.resultsInnerFrame.columnconfigure(self.cardColumn, weight=1)
 
             #sprite label
             spriteLabel = ttk.Label(self.card, text='')
@@ -705,9 +706,12 @@ class mainWindow(tk.Tk):
         self.encycSpriteRefs = {}
 
         #grid settings
-        self.columns = 4
+        self.columns = 3
         self.cardPadX = 10
         self.cardPadY = 10
+
+        for column in range(self.columns):
+            self.encycResultsInnerFrame.columnconfigure(column, weight=1, uniform='encycCols')
 
         itemType = self.encycItemTypeVar.get()
 
@@ -719,8 +723,6 @@ class mainWindow(tk.Tk):
             #card frame
             self.card = ttk.Frame(self.encycResultsInnerFrame, padding=8, style='TFrame')
             self.card.grid(row=self.cardRow, column=self.cardColumn, sticky=tk.NSEW, padx=self.cardPadX, pady=self.cardPadY)
-
-            self.encycResultsInnerFrame.columnconfigure(self.cardColumn, weight=1)
 
             #sprite label
             spriteLabel = ttk.Label(self.card, text='')
@@ -1139,7 +1141,7 @@ class mainWindow(tk.Tk):
         self.detailsInfoScrollbar = ttk.Scrollbar(self.detailsInfoOuterFrame, orient='vertical')
         self.detailsInfoScrollbar.grid(row=0, column=1, sticky=tk.NS)
 
-        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['framecolor'], fg=self.colours['fgcolor'], font=(self.FONT, 10), relief='flat', highlightthickness=0, padx=8, pady=8)
+        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['framecolor'], fg=self.colours['fgcolor'], font=(self.FONT, 12), relief='flat', highlightthickness=0, padx=8, pady=8)
         self.detailsInfoText.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.detailsInfoScrollbar.configure(command=self.detailsInfoText.yview)
@@ -1369,7 +1371,7 @@ class mainWindow(tk.Tk):
         for widget in self.mainFrame.winfo_children():
             widget.destroy()
 
-        self.makeTitle(f'Team Rater = Gen {self.selectedTeamGen} ({self.selectedTeamGame})')
+        self.makeTitle(f'Team Rater - Gen {self.selectedTeamGen} ({self.selectedTeamGame})')
     
         #details frame
         self.makeDetailsFrame(headerText='Select a Team Slot', framePady=(0, 15), gridRow=1, rowSpan=3)
@@ -1466,39 +1468,14 @@ class mainWindow(tk.Tk):
     
     #validates whether pokemon exists in the chosen game
     def monExistsInGame(self, monKey):
-        #tries encounter version and matches to chosen game's pokeAPI version list
-        #if no encounters, fromGen <= selectedGen
         try:
             teamMon = TUPitems.Mon('mon', monKey, self.selectedTeamGen)
             monFromGen = int(teamMon.getItemFromGen())
-
-            if monFromGen > int(self.selectedTeamGen):
-                return False
+            return monFromGen <= int(self.selectedTeamGen)
             
         except:
             return False
         
-        versions = self.gameVersions.get(self.selectedTeamGame, [])
-        if not versions:
-            return True
-        
-        try:
-            pokemon=pb.pokemon(monKey)
-
-            encounters = getattr(pokemon, 'location_area_encounters', None)
-            if not encounters:
-                return True
-            
-            for i in encounters:
-                for j in getattr(i, 'version_details', []):
-                    versionName = getattr(getattr(j, 'version', None), 'name', None)
-                    if versionName in versions:
-                        return True
-
-            return False
-
-        except:
-            return True
 
     def onAddTeamMon(self):
         userIn = self.teamSearchEntry.get()
@@ -1669,7 +1646,10 @@ class mainWindow(tk.Tk):
             return None
 
     def onTeamAnalyse(self):
-        report = TUPteamrater.analyseTeam(teamSlots=self.teamSlots, moveTypeLookup=self.getMoveTypeCached)
+        overall = TUPteamrater.analyseTeam(teamSlots=self.teamSlots, moveTypeLookup=self.getMoveTypeCached)
+        gameKey = self.getTrainerGameKey()
+        trainers = TUPteamrater.getTrainerReport(teamSlots=self.teamSlots, gameKey=gameKey, moveTypeLookup=self.getMoveTypeCached)
+        report = overall + '\n\n' + trainers
 
         self.detailsNameLabel.configure(text='Team Analysis')
         self.detailsInfoText.configure(state='normal')
@@ -1678,6 +1658,30 @@ class mainWindow(tk.Tk):
         self.detailsInfoText.configure(state='disabled')
         self.detailsSpriteLabel.grid_remove()
         self.detailsSpriteRef = None
+
+    def getTrainerGameKey(self):
+        #maps to trainer key, 'Red/Blue' -> 'red-blue'
+        GAMEKEYMAP = {
+            'Red/Blue': 'red-blue',
+            'Gold/Silver': 'gold-silver',
+            'Ruby/Sapphire': 'ruby-sapphire',
+            'Fire Red/Leaf Green': 'firered-leafgreen',
+            'Diamond/Pearl': 'diamond-pearl',
+            'Heart Gold/Soul Silver': 'heartgold-soulsilver',
+            'Black/White': 'black-white',
+            'Black 2/White 2': 'black-2-white-2',
+            'X/Y': 'x-y',
+            'Omega Ruby/Alpha Sapphire': 'omega-ruby-alpha-sapphire',
+            'Sun/Moon': 'sun-moon',
+            'Ultra Sun/Ultra Moon': 'ultra-sun-ultra-moon',
+            "Let's Go Pikachu/Eevee": 'lets-go-pikachu-lets-go-eevee',
+            'Sword/Shield': 'sword-shield',
+            'Brilliant Diamond/Shining Pearl': 'brilliant-diamond-shining-pearl',
+            'Scarlet/Violet': 'scarlet-violet',
+        }
+
+        return GAMEKEYMAP.get(self.selectedTeamGame, self.gameVersions.get(self.selectedTeamGame, [None])[0])
+
 
     def getAPINameList(self, endpoint):
         if not hasattr(self, 'apiNameCache'):

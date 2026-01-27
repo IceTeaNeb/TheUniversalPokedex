@@ -186,4 +186,113 @@ def getTeamAnalysisStats(teamSlots, moveTypeLookup=None):
 
     return {'typeCounts': typeCounts, 'weak': weak, 'resist': resist, 'immune': immune, 'coverage': coverage, 'teamSize': len(mons)}
 
-#def analyseTrainers(teamSlots, gameKey, moveTypeLookup=None):
+def getMonAttackTypes(mon, moveTypeLookup):
+    attackTypes = set()
+    if moveTypeLookup is not None:
+        for moveName in (mon.get('moves') or []):
+            moveType = normaliseType(moveTypeLookup(moveName))
+            if moveType:
+                attackTypes.add(moveType)
+    
+    if not attackTypes:
+        type1 = normaliseType(mon.get('type1'))
+        type2 = normaliseType(mon.get('type2'))
+        if type1:
+            attackTypes.add(type1)
+        if type2 and type2 != type1:
+            attackTypes.add(type2)
+    return attackTypes
+
+def scoreTrainerType(typeList, mons, moveTypeLookup):
+    #mixed teams skip scoring
+    if not typeList or 'mixed' in typeList:
+        return {'coverageMons': 0, 'weakMons': 0, 'note': 'Mixed Team'}
+    
+    coverageMons = 0
+    weakMons = 0
+
+    for mon in mons:
+        defType1 = normaliseType(mon.get('type1'))
+        defType2 = normaliseType(mon.get('type2'))
+        atkTypes = getMonAttackTypes(mon, moveTypeLookup)
+
+        #can mon hit for any trainer type for super effective
+        super = False
+        for trainerType in typeList:
+            trainerType = normaliseType(trainerType)
+            best = 1.0
+
+            for atk in atkTypes:
+                best = max(best, getTypeMultiplier(atk, trainerType))
+
+            if best >= 2.0:
+                super = True
+                break
+        
+        if super:
+            coverageMons += 1
+        
+        #is mon weak to any trainer type
+        isWeak = False
+        for trainerType in typeList:
+            trainerType = normaliseType(trainerType)
+            mult = getDamageTakenMult(trainerType, defType1, defType2)
+
+            if mult >= 2.0:
+                isWeak = True
+                break
+        
+        if isWeak:
+            weakMons += 1
+    
+    return {'coverageMons': coverageMons, 'weakMons': weakMons, 'note': ''}
+
+
+def getTrainerReport(teamSlots, gameKey, moveTypeLookup=None):
+    data = TRAINERSBYGAME.get(gameKey)
+    if not data:
+        return f'No trainer data available for: {gameKey}'
+
+    stats = getTeamAnalysisStats(teamSlots, moveTypeLookup)
+    if stats['teamSize'] == 0:
+        return 'Your team is empty. Please add Pokémon first.'
+    
+    mons = [mon for mon in teamSlots if mon]
+
+    lines = []
+    lines.append(f'Game Key: {gameKey}')
+    lines.append(f'Team Size: {stats["teamSize"]}/6\n')
+    
+    lines.append('GYM MATCHUPS:')
+    for gym in data.get('gyms', []):
+        name = gym.get('name', 'Gym')
+        types = [normaliseType(t) for t in (gym.get('types') or []) if normaliseType(t)]
+        result = scoreTrainerType(types, mons, moveTypeLookup)
+        if types:
+            typeText = ', '.join(titleName(t) for t in types)
+        else:
+            typeText = 'Mixed/Unknown'
+        
+        lines.append(f'- {name} ({typeText})')
+        if result['note']:
+            lines.append(f'   - Note: {result["note"]}')
+        lines.append(f'   - Coverage: {result["coverageMons"]}/{stats["teamSize"]} team members')
+        lines.append(f'   - Weakness: {result["weakMons"]}/{stats["teamSize"]} team members\n')
+
+    lines.append('ELITE FOUR:')
+    for elite in data.get('elite_four', []):
+        name = elite.get('name', 'Elite Four')
+        types = [normaliseType(t) for t in (elite.get('types') or []) if normaliseType(t)]
+        result = scoreTrainerType(types, mons, moveTypeLookup)
+        if types:
+            typeText = ', '.join(titleName(t) for t in types)
+        else:
+            typeText = 'Mixed/Unknown'
+        
+        lines.append(f'- {name} ({typeText})')
+        if result['note']:
+            lines.append(f'   - Note: {result["note"]}')
+        lines.append(f'   - Coverage: {result["coverageMons"]}/{stats["teamSize"]} team members')
+        lines.append(f'   - Weakness: {result["weakMons"]}/{stats["teamSize"]} team members\n')
+
+    return '\n'.join(lines)

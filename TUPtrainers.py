@@ -305,7 +305,7 @@ TRAINERSBYGAME = {
             {'name': 'Champion', 'types': ['mixed']},
         ],
     },
-    'black-white': {
+    'black-2-white-2': {
         'gyms': [
             {'name': 'Cheren', 'types': ['normal']},
             {'name': 'Roxie', 'types': ['poison']},
