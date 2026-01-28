@@ -108,20 +108,6 @@ class mainWindow(tk.Tk):
         self.styleMB.configure('filter.TMenubutton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), arrowcolor=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
         self.styleMB.map('filter.TMenubutton', background=[('active', self.colours['activecolor'])])
 
-        #light main menu large icons
-        self.buttonMenuBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'pokeballIconLight.png.png')))
-        self.buttonMenuBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'encyclopediaIconLight.png.png')))
-        self.buttonMenuArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'teamraterIconLight.png.png')))
-        self.buttonMenuExitIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'exitIconLight.png.png')))
-        self.buttonMenuChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'typechartIconLight.png.png')))
-
-        #light side menu small icons
-        self.buttonSideBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'pokeballIconLightSmall.png.png')))
-        self.buttonSideBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'encyclopediaIconLightSmall.png.png')))
-        self.buttonSideArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'teamraterIconLightSmall.png.png')))
-        self.buttonSideHouseIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'menuIconLight.png.png')))
-        self.buttonSideChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'icons', 'typechartIconLightSmall.png.png')))
-
         #type chart images
         self.typeChartImage = ImageTk.PhotoImage(Image.open(os.path.join(self.scriptDir, 'assets', 'chart', 'pokemon-type-chart2.png')))
 
@@ -256,8 +242,8 @@ class mainWindow(tk.Tk):
         self.sideMenuFrame.rowconfigure(1, weight=1)
         self.sideMenuFrame.rowconfigure(2, weight=1)
 
-        self.buttonChart = ttk.Button(self.sideMenuFrame, text='Type Chart', image=self.buttonMenuChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonChart.grid(column=0, row=0, sticky=tk.NSEW, padx=15, pady=15)
+        self.buttonMenuChart = ttk.Button(self.sideMenuFrame, text='Type Chart', image=self.buttonMenuChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonMenuChart.grid(column=0, row=0, sticky=tk.NSEW, padx=15, pady=15)
 
         self.themeMenu = ttk.OptionMenu(self.sideMenuFrame, self.themeVar, self.themeVar.get(), *self.themes.keys(), command=lambda choice: self.applyTheme(choice), style='filter.TMenubutton')
         self.themeMenu.grid(column=0, row=1, sticky=tk.NSEW, padx=15, pady=15)
@@ -511,8 +497,8 @@ class mainWindow(tk.Tk):
         self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.TOP, command=self.showTeamraterScreen, style='main.TButton')
         self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buttonSideChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonSideChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -534,8 +520,8 @@ class mainWindow(tk.Tk):
         self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.TOP, command=self.showTeamraterScreen, style='main.TButton')
         self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buttonSideChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonSideChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -560,8 +546,8 @@ class mainWindow(tk.Tk):
         self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.TOP, command=self.showEncyclopediaScreen, style='main.TButton')
         self.buttonEncyc.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
 
-        self.buttonChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buttonSideChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
+        self.buttonSideChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -1892,6 +1878,9 @@ class mainWindow(tk.Tk):
     def applyTheme(self, themeName):
         theme = self.themes.get(themeName, self.themes['Dark Blue'])
 
+        iconSetKey = self.getIconSet(themeName)
+        self.loadIcons(iconSetKey)
+
         self.colours.update({
             'bgcolor': theme['bgcolor'], 'fgcolor': theme['fgcolor'],
             'activecolor': theme['activecolor'], 'framecolor': theme['framecolor'],
@@ -1918,6 +1907,93 @@ class mainWindow(tk.Tk):
 
         if hasattr(self, 'detailsInfoText'):
             self.detailsInfoText.configure(bg=self.colours['bgcolor'], fg=self.colours['fgcolor'])
+
+        if hasattr(self, 'buttonBall'):
+            self.buttonBall.configure(image=self.buttonMenuBallIcon)
+        if hasattr(self, 'buttonBook'):
+            self.buttonBook.configure(image=self.buttonMenuBookIcon)
+        if hasattr(self, 'buttonArrow'):
+            self.buttonArrow.configure(image=self.buttonMenuArrowIcon)
+        if hasattr(self, 'buttonExit'):
+            self.buttonExit.configure(image=self.buttonMenuExitIcon)
+        if hasattr(self, 'buttonMenuChart'):
+            self.buttonChart.configure(image=self.buttonMenuChartIcon)
+
+        if hasattr(self, 'buttonDex'):
+            self.buttonDex.configure(image=self.buttonSideBallIcon)
+        if hasattr(self, 'buttonEncyc'):
+            self.buttonEncyc.configure(image=self.buttonSideBookIcon)
+        if hasattr(self, 'buttonTeam'):
+            self.buttonTeam.configure(image=self.buttonSideArrowIcon)
+        if hasattr(self, 'buttonSideChart'):
+            self.buttonChart.configure(image=self.buttonSideChartIcon)
+        if hasattr(self, 'menuButton'):
+            self.menuButton.configure(image=self.buttonSideHouseIcon)
+
+    def getIconSet(self, themeName):
+        if themeName == 'Dark Red':
+            return 'red'
+        elif themeName in ('Light Blue', 'Light Red'):
+            return 'white'
+        else:
+            return 'blue'
+        
+    def loadIcons(self, iconSetKey):
+        iconDir = os.path.join(self.scriptDir, 'assets', 'icons')
+
+        iconFiles = {
+            'white': {
+                'menuBall': 'pokeballIcon.png',
+                'menuBook': 'encyclopediaIcon.png',
+                'menuArrow': 'teamraterIcon.png',
+                'menuExit': 'exitIcon.png',
+                'menuChart': 'typechartIcon.png',
+                'sideBall': 'pokeballIconSmall.png',
+                'sideBook': 'encyclopediaIconSmall.png',
+                'sideArrow': 'teamraterIconSmall.png',
+                'sideHouse': 'menuIcon.png',
+                'sideChart': 'typechartIconSmall.png',
+            },
+            'red': {
+                'menuBall': 'pokeballIconRed.png',
+                'menuBook': 'encyclopediaIconRed.png',
+                'menuArrow': 'teamraterIconRed.png',
+                'menuExit': 'exitIconRed.png',
+                'menuChart': 'typechartIconRed.png',
+                'sideBall': 'pokeballIconSmallRed.png',
+                'sideBook': 'encyclopediaIconSmallRed.png',
+                'sideArrow': 'teamraterIconSmallRed.png',
+                'sideHouse': 'menuIconRed.png',
+                'sideChart': 'typechartIconSmallRed.png',
+            },
+            'blue': {
+                'menuBall': 'pokeballIconBlue.png',
+                'menuBook': 'encyclopediaIconBlue.png',
+                'menuArrow': 'teamraterIconBlue.png',
+                'menuExit': 'exitIconBlue.png',
+                'menuChart': 'typechartIconBlue.png',
+                'sideBall': 'pokeballIconSmallBlue.png',
+                'sideBook': 'encyclopediaIconSmallBlue.png',
+                'sideArrow': 'teamraterIconSmallBlue.png',
+                'sideHouse': 'menuIconBlue.png',
+                'sideChart': 'typechartIconSmallBlue.png',
+            }
+        }
+
+        chosen = iconFiles.get(iconSetKey, iconFiles['blue'])
+
+        self.buttonMenuBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['menuBall'])))
+        self.buttonMenuBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['menuBook'])))
+        self.buttonMenuArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['menuArrow'])))
+        self.buttonMenuExitIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['menuExit'])))
+        self.buttonMenuChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['menuChart'])))
+
+        self.buttonSideBallIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideBall'])))
+        self.buttonSideBookIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideBook'])))
+        self.buttonSideArrowIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideArrow'])))
+        self.buttonSideHouseIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideHouse'])))
+        self.buttonSideChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideChart'])))
+
 
     #clears window
     def clearWindow(self):
