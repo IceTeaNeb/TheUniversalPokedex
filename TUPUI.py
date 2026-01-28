@@ -459,6 +459,12 @@ class mainWindow(tk.Tk):
     #making screen for Type Chart section
     def typeChartScreen(self):
         self.secondaryScreen()
+
+        for row in range(4):
+            self.mainFrame.rowconfigure(row, weight=1, minsize=0)
+        for column in range(4):
+            self.mainFrame.columnconfigure(column, weight=1)
+
         for i in range(2, 5):
             self.rowconfigure(i, weight=0)
 
@@ -466,18 +472,11 @@ class mainWindow(tk.Tk):
         self.makeTitle('Type Chart')
 
         #create side frame buttons
-        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonSideBallIcon, compound=tk.TOP, command=self.showPokedexScreen, style='main.TButton')
-        self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.TOP, command=self.showEncyclopediaScreen, style='main.TButton')
-        self.buttonEncyc.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.TOP, command=self.showTeamraterScreen, style='main.TButton')
-        self.buttonTeam.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buildSideNav('typechart')
 
         #type chart image
         self.chartLabel = ttk.Label(self.mainFrame, image=self.typeChartImage, anchor='center')
-        self.chartLabel.grid(column=0, row=2, padx=15, pady=15, sticky=tk.NSEW)
+        self.chartLabel.grid(column=0, row=0, columnspan=4, rowspan=4, padx=15, pady=15, sticky=tk.NSEW)
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -491,14 +490,7 @@ class mainWindow(tk.Tk):
         self.makeTitle('Pokédex')
         
         #create side frame buttons
-        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.TOP, command=self.showEncyclopediaScreen, style='main.TButton')
-        self.buttonEncyc.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.TOP, command=self.showTeamraterScreen, style='main.TButton')
-        self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonSideChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonSideChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buildSideNav('pokedex')
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -514,14 +506,7 @@ class mainWindow(tk.Tk):
         self.makeTitle('Encyclopedia')
 
         #create side frame buttons
-        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonSideBallIcon, compound=tk.TOP, command=self.showPokedexScreen, style='main.TButton')
-        self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonTeam = ttk.Button(self.sideFrame, text='Team Rater', image=self.buttonSideArrowIcon, compound=tk.TOP, command=self.showTeamraterScreen, style='main.TButton')
-        self.buttonTeam.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonSideChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonSideChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buildSideNav('encyclopedia')
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -529,8 +514,6 @@ class mainWindow(tk.Tk):
 
         #encyclopedia frame
         self.encyclopediaFrame()
-
-
 
     #making screen for Team Rater
     def teamraterScreen(self):
@@ -540,14 +523,7 @@ class mainWindow(tk.Tk):
         self.makeTitle('Team Rater')
 
         #create side frame buttons
-        self.buttonDex = ttk.Button(self.sideFrame, text='Pokédex', image=self.buttonSideBallIcon, compound=tk.TOP, command=self.showPokedexScreen, style='main.TButton')
-        self.buttonDex.grid(row=1, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonEncyc = ttk.Button(self.sideFrame, text='Encyclopedia', image=self.buttonSideBookIcon, compound=tk.TOP, command=self.showEncyclopediaScreen, style='main.TButton')
-        self.buttonEncyc.grid(row=2, sticky=tk.NSEW, padx=10, pady=10)
-
-        self.buttonSideChart = ttk.Button(self.sideFrame, text='Type Chart', image=self.buttonSideChartIcon, compound=tk.TOP, command=self.showTypeChartScreen, style='main.TButton')
-        self.buttonSideChart.grid(row=3, sticky=tk.NSEW, padx=10, pady=10)
+        self.buildSideNav('teamrater')
 
         #return to main menu button
         self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
@@ -622,6 +598,46 @@ class mainWindow(tk.Tk):
         resultCanvas.bind('<Leave>', lambda e: resultCanvas.unbind_all('<MouseWheel>'))
 
         return scrollOuterFrame, resultCanvas, scrollInnerFrame
+    
+    def buildSideNav(self, currentScreen):
+        #builds sidebar to navigate through secondary screens
+
+        #clears existing widgets in sideFrame
+        for widget in self.sideFrame.winfo_children():
+            widget.destroy()
+        
+        #main menu button
+        self.menuButton = ttk.Button(self.sideFrame, text='Main Menu', image=self.buttonSideHouseIcon, compound=tk.LEFT, command=self.showMainMenu, style='main.TButton')
+        self.menuButton.grid(column=0, row=0, padx=15, pady=15, sticky=tk.NSEW)
+
+        buttonNav = [ #key, label, imageAttr, command
+            ('pokedex', 'Pokédex', self.buttonSideBallIcon, self.showPokedexScreen),
+            ('encyclopedia', 'Encyclopedia', self.buttonSideBookIcon, self.showEncyclopediaScreen),
+            ('teamrater', 'Team Rater', self.buttonSideArrowIcon, self.showTeamraterScreen),
+            ('typechart', 'Type Chart', self.buttonSideChartIcon, self.showTypeChartScreen)
+        ]
+
+        row = 1
+        for key, label, icon, cmd in buttonNav:
+            if key == currentScreen:
+                continue
+            
+            #side button
+            button = ttk.Button(self.sideFrame, text=label, image=icon, compound=tk.TOP, command=cmd, style='main.TButton')
+            button.grid(row=row, sticky=tk.NSEW, padx=10, pady=10)
+
+            #store references for updating icons
+            if key == 'pokedex':
+                self.buttonDex = button
+            if key == 'encyclopedia':
+                self.buttonEncyc = button
+            if key == 'teamrater':
+                self.buttonTeam = button
+            if key == 'typechart':
+                self.buttonSideChart = button
+
+            row += 1
+        
 
     #populates grid with Pokémon that match the search/filter criteria  
     def populateResultsGrid(self, rows):
@@ -750,12 +766,8 @@ class mainWindow(tk.Tk):
         else:
             self.selectedDexMonID = None
             self.detailsNameLabel.configure(text='No results')
-            self.detailsInfoText.config(state='normal')
-            self.detailsInfoText.delete('1.0', 'end')
-            self.detailsInfoText.configure(state='disabled')
-            self.detailsSpriteLabel.configure(image='')
-            self.detailsSpriteLabel.grid_remove()
-            self.detailsSpriteRef = None
+            self.setText('detailsInfoText', '')
+            self.hideDetailsSprite()
 
             if hasattr(self, "deleteButton"):
                 self.deleteButton.state(["disabled"])
@@ -789,14 +801,8 @@ class mainWindow(tk.Tk):
         else:
             self.selectedEncycKey = None
             self.detailsNameLabel.configure(text='No results')
-            self.detailsInfoText.config(state='normal')
-            self.detailsInfoText.delete('1.0', 'end')
-            self.detailsInfoText.insert('1.0', 'No results match your search.')
-            self.detailsInfoText.configure(state='disabled')
-
-            self.detailsSpriteLabel.configure(image='')
-            self.detailsSpriteLabel.grid_remove()
-            self.detailsSpriteRef = None
+            self.setText('detailsInfoText', 'No results match your search.')
+            self.hideDetailsSprite()
     
     #loads specified Pokémon sprite to label
     def loadSpriteToLabel(self, spriteURL, label, monID):
@@ -825,12 +831,8 @@ class mainWindow(tk.Tk):
         
         if not mon:
             self.detailsNameLabel.configure(text='No details for this Pokémon')
-            self.detailsInfoText.config(state='normal')
-            self.detailsInfoText.delete('1.0', 'end')
-            self.detailsInfoText.insert('1.0', 'No details for this Pokémon')
-            self.detailsInfoText.configure(state='disabled')
-            self.detailsSpriteLabel.grid_remove()
-            self.detailsSpriteRef = None
+            self.setText('detailsInfoText', 'No details for this Pokémon')
+            self.hideDetailsSprite()
             return
 
         #update labels
@@ -885,14 +887,7 @@ class mainWindow(tk.Tk):
 
         #update sprite
         sprite = self.loadCachedSprite(mon.get('SpriteURL'), size=(256, 256))
-        if sprite:
-            self.detailsSpriteLabel.grid()
-            self.detailsSpriteLabel.configure(image=sprite)
-            self.detailsSpriteRef = sprite
-        else:
-            self.detailsSpriteLabel.configure(image='')
-            self.detailsSpriteLabel.grid_remove()
-            self.detailsSpriteRef = None
+        self.showDetailsSprite(sprite)
 
     def showEncyclopediaDetails(self, itemKey):
         sprite = None
@@ -903,8 +898,7 @@ class mainWindow(tk.Tk):
         else:
             chosenGenNum = 9
 
-        self.detailsSpriteLabel.grid_remove()
-        self.detailsSpriteRef = None
+        self.hideDetailsSprite()
 
         try:
             if itemType == 'Pokémon':
@@ -978,27 +972,13 @@ class mainWindow(tk.Tk):
 
                 infoText = (f"Flavor Text: {abilObj.getFlavorText() or 'None'}\n")
             
-            self.detailsInfoText.configure(state='normal')
-            self.detailsInfoText.delete('1.0', 'end')
-            self.detailsInfoText.insert('1.0', infoText)
-            self.detailsInfoText.configure(state='disabled')
+            self.setText('detailsInfoText', infoText)
+            self.showDetailsSprite(sprite)
         
         except:
-            self.detailsInfoText.configure(state='normal')
-            self.detailsInfoText.delete('1.0', 'end')
-            self.detailsInfoText.insert('1.0', 'Could not load details from PokéAPI.')
-            self.detailsInfoText.configure(state='disabled')
-            sprite = None
-
-        if sprite:
-            self.detailsSpriteLabel.grid()
-            self.detailsSpriteLabel.configure(image=sprite)
-            self.detailsSpriteRef = sprite
-        else:
-            self.detailsSpriteLabel.configure(image='')
-            self.detailsSpriteLabel.grid_remove()
-            self.detailsSpriteRef = None   
-                
+            self.detailsNameLabel.configure(text='Error')
+            self.setText('detailsInfoText', 'Could not load details from PokéAPI.')
+            self.hideDetailsSprite()
 
     def titleName(self, text):
         if not text:
@@ -1905,30 +1885,19 @@ class mainWindow(tk.Tk):
         self.styleMB.configure('filter.TMenubutton', background=self.colours['bgcolor'], foreground=self.colours['fgcolor'], font=(self.FONT, 15), arrowcolor=self.colours['fgcolor'], bordercolor=self.colours['bgcolor'])
         self.styleMB.map('filter.TMenubutton', background=[('active', self.colours['activecolor'])])
 
-        if hasattr(self, 'detailsInfoText'):
-            self.detailsInfoText.configure(bg=self.colours['bgcolor'], fg=self.colours['fgcolor'])
+        self.configWidget('detailsInfoText', bg=self.colours['bgcolor'], fg=self.colours['fgcolor'])
 
-        if hasattr(self, 'buttonBall'):
-            self.buttonBall.configure(image=self.buttonMenuBallIcon)
-        if hasattr(self, 'buttonBook'):
-            self.buttonBook.configure(image=self.buttonMenuBookIcon)
-        if hasattr(self, 'buttonArrow'):
-            self.buttonArrow.configure(image=self.buttonMenuArrowIcon)
-        if hasattr(self, 'buttonExit'):
-            self.buttonExit.configure(image=self.buttonMenuExitIcon)
-        if hasattr(self, 'buttonMenuChart'):
-            self.buttonChart.configure(image=self.buttonMenuChartIcon)
+        self.configWidget('buttonBall', image=self.buttonMenuBallIcon)
+        self.configWidget('buttonBook', image=self.buttonMenuBookIcon)
+        self.configWidget('buttonArrow', image=self.buttonMenuArrowIcon)
+        self.configWidget('buttonExit', image=self.buttonMenuExitIcon)
+        self.configWidget('buttonMenuChart', image=self.buttonMenuChartIcon)
 
-        if hasattr(self, 'buttonDex'):
-            self.buttonDex.configure(image=self.buttonSideBallIcon)
-        if hasattr(self, 'buttonEncyc'):
-            self.buttonEncyc.configure(image=self.buttonSideBookIcon)
-        if hasattr(self, 'buttonTeam'):
-            self.buttonTeam.configure(image=self.buttonSideArrowIcon)
-        if hasattr(self, 'buttonSideChart'):
-            self.buttonChart.configure(image=self.buttonSideChartIcon)
-        if hasattr(self, 'menuButton'):
-            self.menuButton.configure(image=self.buttonSideHouseIcon)
+        self.configWidget('buttonDex', image=self.buttonSideBallIcon)
+        self.configWidget('buttonEncyc', image=self.buttonSideBookIcon)
+        self.configWidget('buttonTeam', image=self.buttonSideArrowIcon)
+        self.configWidget('buttonSideChart', image=self.buttonSideChartIcon)
+        self.configWidget('menuButton', image=self.buttonSideHouseIcon)
 
     def getIconSet(self, themeName):
         if themeName == 'Dark Red':
@@ -1994,6 +1963,58 @@ class mainWindow(tk.Tk):
         self.buttonSideHouseIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideHouse'])))
         self.buttonSideChartIcon = ImageTk.PhotoImage(Image.open(os.path.join(iconDir, chosen['sideChart'])))
 
+    def configWidget(self, attrName, **kwargs):
+        #configures a widgets stored on self.attrName
+        widget = getattr(self, attrName, None)
+        if widget is None:
+            return False
+        
+        try:
+            if hasattr(widget, 'winfo_exists') and not widget.winfo_exists():
+                return False
+            widget.configure(**kwargs)
+            return True
+        except tk.TclError:
+            return False
+
+    def setText(self, attrName, text):
+        #replace text in text widget stored on self.attrName
+        widget = getattr(self, attrName, None)
+        if widget is None:
+            return False
+        
+        try:
+            if hasattr(widget, 'winfo_exists') and not widget.winfo_exists():
+                return False
+            widget.configure(state='normal')
+            widget.delete('1.0', 'end')
+            widget.insert('1.0', text)
+            widget.configure(state='disabled')
+            return True
+        except tk.TclError:
+            return False
+        
+    def hideDetailsSprite(self):
+        #hide sprite in details section
+        if hasattr(self, 'detailsSpriteLabel') and self.detailsSpriteLabel.winfo_exists():
+            self.detailsSpriteLabel.configure(image='')
+            self.detailsSpriteLabel.grid_remove()
+
+        self.detailsSpriteRef = None
+
+    def showDetailsSprite(self, sprite):
+        #show sprite in details section
+        if not sprite:
+            self.hideDetailsSprite()
+            return
+        
+        try:
+            if hasattr(self, 'detailsSpriteLabel') and self.detailsSpriteLabel.winfo_exists():
+                self.detailsSpriteLabel.grid()
+                self.detailsSpriteLabel.configure(image=sprite)
+                self.detailsSpriteRef = sprite
+        except tk.TclError:
+            self.detailsSpriteRef = None
 
     #clears window
     def clearWindow(self):
