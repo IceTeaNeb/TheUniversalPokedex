@@ -17,8 +17,6 @@ from PIL import Image, ImageTk
 from ctypes import windll
 from io import BytesIO
 
-
-
 #------------------------------------------Tkinter-------------------------------------------#
 class mainWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
