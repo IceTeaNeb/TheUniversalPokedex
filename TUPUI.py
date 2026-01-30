@@ -177,13 +177,6 @@ class mainWindow(tk.Tk):
             'Scarlet/Violet': ['scarlet', 'violet']
         }
 
-    #retrieves sprite using given URL
-    def getSprite(self, URL, label):
-        response = requests.get(URL)
-        monImage = Image.open(BytesIO(response.content))
-        self.monSprite = ImageTk.PhotoImage(monImage)
-        self.after(0, label.configure(image=self.monSprite))
-
     #loads a sprite from self.spriteCache
     def loadCachedSprite(self, spriteURL, size=(192, 192)):
         if not spriteURL:
