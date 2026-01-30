@@ -2,13 +2,50 @@
 
 #-------------------imports------------------#
 import pokebase as pb
+import re
+
+#-------------------constants----------------#
+BASEURL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
+SPRITESUBPATH = {
+    1: 'versions/generation-i/red-blue/transparent',
+    2: 'versions/generation-ii/crystal/transparent',
+    3: 'versions/generation-iii/emerald',
+    4: 'versions/generation-iv/platinum',
+    5: 'versions/generation-v/black-white',
+    6: 'versions/generation-vi/x-y',
+    7: 'versions/generation-vii/ultra-sun-ultra-moon',
+    8: 'versions/generation-viii/icons',
+    9: 'versions/generation-ix/scarlet-violet',
+}
 
 #---------functions----------#
-def spriteURLFromDexNum(dexNum):
-    if not dexNum:
+def spriteURLFromDexNum(dexNum, genNum=None):
+    try:
+        dexNum = int(dexNum)
+    except:
         return None
-    else:
-        return f'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dexNum}.png'
+    
+    if genNum is not None:
+        try:
+            genNum = int(genNum)
+        except:
+            genNum = None
+
+    if genNum in SPRITESUBPATH:
+        return f'{BASEURL}/{SPRITESUBPATH[genNum]}/{dexNum}.png'
+    
+    return f'{BASEURL}/{dexNum}.png'
+
+def getDexNumFromURL(spriteURL):
+    if not spriteURL:
+        return None
+    
+    #looks through the given url for one or more digits followed by .png
+    match = re.search(r'/(\d+)\.png', str(spriteURL))
+
+    if not match:
+        return None
+    return int(match.group(1))
     
 def parseIDFromURL(url):
     try:
@@ -20,6 +57,12 @@ def searchEncyclopedia(criteria, limit=200):
     itemType = criteria.get('itemType', 'Pokémon')
     query = (criteria.get('query') or '').strip().lower()
     gen = criteria.get('gen', 'Any')
+    genNum = None
+    if gen != 'Any':
+        try:
+            genNum = int(gen)
+        except:
+            genNum = None
     typeName = (criteria.get('type') or '').strip().lower()
     if typeName in ('', 'any', None):
         typeName = None
@@ -40,7 +83,7 @@ def searchEncyclopedia(criteria, limit=200):
 
                 dexNum = int(p.id)
                 name = str(p.name).replace('-', ' ').title()
-                return [(dexNum, name, spriteURLFromDexNum(dexNum))]
+                return [(dexNum, name, spriteURLFromDexNum(dexNum, genNum))]
 
             if itemType == 'Move':
                 if not query.isdigit():
@@ -119,7 +162,7 @@ def searchEncyclopedia(criteria, limit=200):
         
         rows = []
         for name, dexNum in getFirstN(sorted(candidates.items(), key=lambda x: x[1])):
-            rows.append((dexNum, str(name).replace('-', ' ').title(), spriteURLFromDexNum(dexNum)))
+            rows.append((dexNum, str(name).replace('-', ' ').title(), spriteURLFromDexNum(dexNum, genNum)))
         return rows
     
     #move list
