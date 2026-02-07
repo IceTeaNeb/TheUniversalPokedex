@@ -11,6 +11,7 @@ import threading
 import ast
 import sqlite3
 import pokebase as pb
+import threading
 from tkinter import PhotoImage, ttk
 from tkinter.messagebox import showinfo, askyesno
 from PIL import Image, ImageTk
@@ -26,6 +27,7 @@ class mainWindow(tk.Tk):
         self.configure(background='#ffffff')
 
         self.currentUserID = None
+        self.currentScreen = None
 
         #default theme is dark blue
         self.colours = {'bgcolor': '#7f7f7f', 'fgcolor': '#c1dbf3', 
@@ -274,7 +276,7 @@ class mainWindow(tk.Tk):
 
         self.mainFrame.columnconfigure(0, weight=1, uniform='main')
         self.mainFrame.columnconfigure(1, weight=2, uniform='main')
-        self.mainFrame.columnconfigure(2, weight=3, uniform='main')
+        self.mainFrame.columnconfigure(2, weight=4, uniform='main')
         self.mainFrame.columnconfigure(3, weight=2, uniform='main')
 
 
@@ -310,7 +312,7 @@ class mainWindow(tk.Tk):
         self.genNum = int(gen)
         self.currentDexID = self.genNum
 
-        self.makeDetailsFrame()
+        self.makeDetailsFrame(framePady=(0, 15), gridRow=2, rowSpan=2)
 
         #change title to match generation chosen
         self.makeTitle(f'Pokédex - Gen {self.genNum}')
@@ -318,9 +320,9 @@ class mainWindow(tk.Tk):
         #checks that the desired dex exists first
         TUPdatabase.ensureDexExists(self.currentDexID, self.genNum, "Default")
 
-        #add mon button
-        self.addButton = ttk.Button(self.mainFrame, text='Add', style='enter.TButton', command=self.openAddMonPopup)
-        self.addButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+        #back button
+        self.backButton = ttk.Button(self.mainFrame, text='Back', style='enter.TButton', command=self.backToGen)
+        self.backButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
 
         #delete button
         self.deleteButton = ttk.Button(self.mainFrame, text='Delete', style='enter.TButton', command=self.onDeleteSelectedMon)
@@ -335,6 +337,10 @@ class mainWindow(tk.Tk):
         #search button
         self.searchButton = ttk.Button(self.mainFrame, text='Enter', style='enter.TButton', command=self.refreshPokedexResults)
         self.searchButton.grid(row=0, column=3, sticky=tk.EW, pady=(15, 10), padx=(0, 0))
+
+        #add mon button
+        self.addButton = ttk.Button(self.mainFrame, text='Add', style='enter.TButton', command=self.openAddMonPopup)
+        self.addButton.grid(row=1, column=0, columnspan=2, sticky=tk.EW, pady=(0, 10), padx=(0, 10))
 
         #filter
         self.filtersFrame = ttk.Frame(self.mainFrame)
@@ -474,6 +480,7 @@ class mainWindow(tk.Tk):
 
     #making screen for Pokédex
     def pokedexScreen(self):
+        self.currentFeature = 'pokedex'
         self.secondaryScreen()
 
         #change title
@@ -507,6 +514,7 @@ class mainWindow(tk.Tk):
 
     #making screen for Team Rater
     def teamraterScreen(self):
+        self.currentFeature = 'teamrater'
         self.secondaryScreen()
 
         #change title
@@ -675,7 +683,7 @@ class mainWindow(tk.Tk):
             if spriteURL:
                 dexNum = TUPitems.getDexNumFromURL(spriteURL)
                 if dexNum is not None:
-                    spriteURL = TUPitems.spriteURLFromDexNum(dexNum, self.genNum)
+                    spriteURL = TUPitems.getSpriteURL(dexNum, self.genNum)
                 #runs _loadSpriteToLabel in background
                 threading.Thread(target=self.loadSpriteToLabel, args=(spriteURL, spriteLabel, dexMonID), daemon=True).start()
 
@@ -880,7 +888,7 @@ class mainWindow(tk.Tk):
 
         #update sprite
         dexNum = mon.get('DexNum')
-        spriteURL = TUPitems.spriteURLFromDexNum(dexNum, self.genNum)
+        spriteURL = TUPitems.getSpriteURL(dexNum, self.genNum)
         sprite = self.loadCachedSprite(spriteURL, size=(256, 256))
         self.showDetailsSprite(sprite)
 
@@ -901,7 +909,6 @@ class mainWindow(tk.Tk):
                 monObj = TUPitems.Mon('mon', int(itemKey), chosenGenNum)
 
                 #update sprite
-                spriteURL = TUPitems.spriteURLFromDexNum(monObj.getDexNum(), chosenGenNum)
                 sprite = self.loadCachedSprite(monObj.getSpriteURL(), size=(256, 256))
 
                 #update labels
@@ -1047,6 +1054,7 @@ class mainWindow(tk.Tk):
 
         self.showMonDetails(dexMonID)
 
+    #when an item in encyclopedia is selected
     def onSelectEncyclopediaItem(self, itemID):
         self.selectedEncycKey = itemID
         self.showEncyclopediaDetails(itemID)
@@ -1066,7 +1074,6 @@ class mainWindow(tk.Tk):
     #make frame for showing selected Pokémon information
     def makeDetailsFrame(self, headerText='Select Pokémon', framePady=15, gridRow=1, rowSpan=3):
         self.detailsFrame = ttk.Frame(self.mainFrame, padding=(20, 20), style='TFrame')
-        #self.detailsFrame.grid_propagate(False)
         self.detailsFrame.grid(row=gridRow, column=0, columnspan=2, rowspan=rowSpan, sticky=tk.NSEW, padx=(15, 10), pady=framePady)
 
         self.detailsFrame.rowconfigure(0, weight=0) #name
@@ -1343,7 +1350,15 @@ class mainWindow(tk.Tk):
         self.makeTitle(f'Team Rater - Gen {self.selectedTeamGen} ({self.selectedTeamGame})')
     
         #details frame
-        self.makeDetailsFrame(headerText='Select a Team Slot', framePady=(0, 15), gridRow=1, rowSpan=3)
+        self.makeDetailsFrame(headerText='Select a Team Slot', framePady=(10, 15), gridRow=2, rowSpan=2)
+
+        #back button
+        self.backButton = ttk.Button(self.mainFrame, text='Back', style='enter.TButton', command=self.backToGen)
+        self.backButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+
+        #continue button
+        self.teamContinueButton = ttk.Button(self.mainFrame, text='Analyse Team', style='enter.TButton', command=self.onTeamAnalyse)
+        self.teamContinueButton.grid(row=0, column=1, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
 
         #entry button
         self.teamSearchEntry = ttk.Entry(self.mainFrame, font=(self.FONT, 20))
@@ -1352,26 +1367,22 @@ class mainWindow(tk.Tk):
 
         #add button
         self.teamAddButton = ttk.Button(self.mainFrame, text='Add to Team', style='enter.TButton', command=self.onAddTeamMon)
-        self.teamAddButton.grid(row=0, column=3, sticky=tk.EW, pady=(15, 10), padx=(0, 0))
+        self.teamAddButton.grid(row=0, column=3, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+
+        #recommend button
+        self.teamRecommendButton = ttk.Button(self.mainFrame, text='Recommend', style='enter.TButton', command=self.onTeamRecommend)
+        self.teamRecommendButton.grid(row=1, column=1, columnspan=2, sticky=tk.EW, pady=(0, 10), padx=(0, 10))
 
         #team slots frame
         self.teamSlotsFrame = ttk.Frame(self.mainFrame, padding=10, style='TFrame')
-        self.teamSlotsFrame.grid(row=1, column=2, columnspan=2, rowspan=3, sticky=tk.NSEW, pady=(0, 15), padx=15)
+        self.teamSlotsFrame.grid(row=2, column=2, columnspan=2, rowspan=2, sticky=tk.NSEW, pady=(0, 15), padx=15)
 
         for column in range(2):
             self.teamSlotsFrame.columnconfigure(column, weight=1, uniform='teamSlots', minsize=190)
         for row in range(3):
-            self.teamSlotsFrame.rowconfigure(row, weight=1, uniform='teamSlotsRows', minsize=170)
+            self.teamSlotsFrame.rowconfigure(row, weight=1, uniform='teamSlotsRows', minsize=190)
 
         self.showTeamSlots()
-
-        #continue button
-        self.teamContinueButton = ttk.Button(self.mainFrame, text='Analyse Team', style='enter.TButton', command=self.onTeamAnalyse)
-        self.teamContinueButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
-
-        #recommend button
-        self.teamRecommendButton = ttk.Button(self.mainFrame, text='Recommend', style='enter.TButton', command=self.onTeamRecommend)
-        self.teamRecommendButton.grid(row=0, column=1, sticky=tk.EW, pady=(15, 10), padx=(10, 10))
 
     #shows 6 slots in team
     def showTeamSlots(self):
@@ -1618,6 +1629,7 @@ class mainWindow(tk.Tk):
         
         try:
             moveObj = pb.move(moveKey)
+            #for moveObj.type.name
             moveType = getattr(getattr(moveObj, 'type', None), 'name', None)
             self.moveTypeCache[moveKey] = moveType
             return moveType
@@ -1628,10 +1640,10 @@ class mainWindow(tk.Tk):
 
     #when user clicks analyse button
     def onTeamAnalyse(self):
-        overall = TUPteamrater.analyseTeam(teamSlots=self.teamSlots, moveTypeLookup=self.getMoveTypeCached)
         gameKey = self.getTrainerGameKey()
+        teamStats = TUPteamrater.getTeamAnalysisStats(teamSlots=self.teamSlots, moveTypeLookup=self.getMoveTypeCached)
         trainers = TUPteamrater.getTrainerReport(teamSlots=self.teamSlots, gameKey=gameKey, moveTypeLookup=self.getMoveTypeCached)
-        report = overall + '\n\n' + trainers
+        report = self.formatTeamAnalysis(teamStats) + '\n\n' + trainers
 
         self.detailsNameLabel.configure(text='Team Analysis')
         self.detailsInfoText.configure(state='normal')
@@ -1640,6 +1652,27 @@ class mainWindow(tk.Tk):
         self.detailsInfoText.configure(state='disabled')
         self.detailsSpriteLabel.grid_remove()
         self.detailsSpriteRef = None
+
+    def formatTeamAnalysis(self, teamStats):
+        if teamStats.get('teamSize', 0) == 0:
+            return ''
+        
+        sortedWeak = sorted(teamStats.get('weak', {}).items(), key=lambda x: x[1], reverse=True)
+        topWeakTypes = sortedWeak[:5]
+        typeCounts = teamStats.get('typeCounts', {})
+        overlap = sorted([(t, count) for t, count in typeCounts.items() if count >= 2], key=lambda x: x[1], reverse=True)
+
+        lines = []
+        lines.append('TEAM OVERVIEW')
+        lines.append(f'Team Size: {teamStats["teamSize"]}')
+        lines.append('\nType Overlap:')
+        lines.extend([f'-   {t.title()} x{count}' for t, count in overlap] if overlap else ['-   None'])
+        lines.append('\nTop Weaknesses:')
+        lines.extend([f'-   {t.title()} ({weak}/{teamStats["teamSize"]} weak)' for t, weak in topWeakTypes] if topWeakTypes else ['-   None'])
+
+        return '\n'.join(lines)
+
+
 
     #maps to trainer key, 'Red/Blue' -> 'red-blue'
     def getTrainerGameKey(self):
@@ -1666,36 +1699,50 @@ class mainWindow(tk.Tk):
     
     #when user clicks recommend button
     def onTeamRecommend(self):
+        #stops multiple clicks slowing down program
+        try:
+            self.teamRecommendButton.state(['disabled'])
+        except:
+            pass
+
+        self.detailsNameLabel.configure(text='Team Recommendations')
+        self.setText('detailsInfoText', 'Loading...')
+        self.hideDetailsSprite()
+
         teamSlots = self.teamSlots
         chosenGen = self.selectedTeamGen
-        recommended = TUPteamrater.getRecommendedMons(teamSlots=teamSlots, chosenGen=chosenGen, moveTypeLookup=self.getMoveTypeCached)
 
-        lines = []
-        lines.append('RECOMMENDATIONS:\n')
+        def threadFunc():
+            try:
+                recommended = TUPteamrater.getRecommendedMons(teamSlots=teamSlots, chosenGen=chosenGen, moveTypeLookup=self.getMoveTypeCached)
+            except:
+                pass
 
-        if not recommended:
-            lines.append('No recommendations available. Add Pokémon first, or your team already has good coverage.')
-        else:
-            for r in recommended:
-                type1 = self.formatAPIText(r.get('type1'))
-                type2 = self.formatAPIText(r.get('type2'))
-                if type2:
-                    typeLine = f'{type1} / {type2}'
+            def applyResult():
+                lines = []
+                lines.append('RECOMMENDATIONS:\n')
+
+                if not recommended:
+                    lines.append('No recommendations available.')
                 else:
-                    typeLine = f'{type1}'
-    
-                lines.append(f"- {r['name']} ({typeLine})")
-                lines.append(f"   - BST: {r['bst']}")
-                lines.append(f"   - {r['reason']}")
+                    for r in recommended:
+                        type1 = self.formatAPIText(r.get('type1'))
+                        type2 = self.formatAPIText(r.get('type2'))
+                        if type2:
+                            typeLine = f'{type1} / {type2}'
+                        else:
+                            typeLine = f'{type1}'
+            
+                        lines.append(f"- {r['name']} ({typeLine})")
+                        lines.append(f"   - BST: {r['bst']}")
+                        lines.append(f"   - {r['reason']}")
 
-            self.detailsNameLabel.configure(text='Team Recommendations')
-            self.detailsInfoText.config(state='normal')
-            self.detailsInfoText.delete('1.0', 'end')
-            self.detailsInfoText.insert('1.0', '\n'.join(lines))
-            self.detailsInfoText.configure(state='disabled')
-            self.detailsSpriteLabel.configure(image='')
-            self.detailsSpriteLabel.grid_remove()
-            self.detailsSpriteRef = None
+                self.setText('detailsInfoText', '\n'.join(lines))
+
+            self.after(0, applyResult)
+        
+        #separate thread that runs alongside main thread
+        threading.Thread(target=threadFunc, daemon=True).start()
     
     #gets version groups in chosen gen
     def getAllowedVersionGroups(self, genNum):
@@ -2025,6 +2072,20 @@ class mainWindow(tk.Tk):
                 self.detailsSpriteRef = sprite
         except tk.TclError:
             self.detailsSpriteRef = None
+    
+    #back to gen select
+    def backToGen(self):
+        for widget in self.mainFrame.winfo_children():
+            widget.destroy()
+
+        if self.currentFeature == 'pokedex':
+            self.makeTitle('Pokédex')
+            self.dexSelectFrame()
+        elif self.currentFeature == 'teamrater':
+            self.teamraterScreen()
+        else:
+            self.showMainMenu()
+    
 
     #clears window
     def clearWindow(self):

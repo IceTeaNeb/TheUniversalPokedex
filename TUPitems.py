@@ -1,4 +1,4 @@
-#The Universal Pokédex - retrieving information from PokéAPI
+#The Universal Pokédex - handles PokéAPI operations
 
 #-------------------imports------------------#
 import pokebase as pb
@@ -19,7 +19,9 @@ SPRITESUBPATH = {
 }
 
 #---------functions----------#
-def spriteURLFromDexNum(dexNum, genNum=None):
+
+#gets sprite URL using dexNum
+def getSpriteURL(dexNum, genNum=None):
     try:
         dexNum = int(dexNum)
     except:
@@ -36,6 +38,7 @@ def spriteURLFromDexNum(dexNum, genNum=None):
     
     return f'{BASEURL}/{dexNum}.png'
 
+#gets dexNum using URL
 def getDexNumFromURL(spriteURL):
     if not spriteURL:
         return None
@@ -46,13 +49,15 @@ def getDexNumFromURL(spriteURL):
     if not match:
         return None
     return int(match.group(1))
-    
+
+#extracts ID from URL
 def parseIDFromURL(url):
     try:
         return int(str(url).rstrip('/').split('/')[-1])
     except:
         return None
 
+#searches pokeAPI for Pokémon, moves or abilities
 def searchEncyclopedia(criteria, limit=200):
     itemType = criteria.get('itemType', 'Pokémon')
     query = (criteria.get('query') or '').strip().lower()
@@ -67,39 +72,47 @@ def searchEncyclopedia(criteria, limit=200):
     if typeName in ('', 'any', None):
         typeName = None
 
-    #if user typed something
+    #if user typed into search
     if query:
         try:
+            #pokemon
             if itemType == 'Pokémon':
                 if not query.isdigit():
                     p = pb.pokemon(query)
                 else:
                     p = pb.pokemon(int(query))
 
+                #validate gen
                 if gen != 'Any':
                     fromGen = pb.pokemon_species(int(p.id)).generation.id
                     if int(gen) != int(fromGen):
                         return []
-
+                
+                #returns formatted row
                 dexNum = int(p.id)
                 name = str(p.name).replace('-', ' ').title()
-                return [(dexNum, name, spriteURLFromDexNum(dexNum, genNum))]
+                spriteURL = getSpriteURL(dexNum, genNum)
+                return [(dexNum, name, spriteURL)]
 
+            #move
             if itemType == 'Move':
                 if not query.isdigit():
                     m = pb.move(query)
                 else:
                     m = pb.move(int(query))
 
+                #validate gen
                 if gen != 'Any':
                     fromGen = m.generation.id
                     if int(gen) != int(fromGen):
                         return []
 
+                #return formatted row
                 moveID = int(m.id)
-                name = str(m.name).replace('-', ' ').title()
-                return [(moveID, name, None)]
+                displayName = str(m.name).replace('-', ' ').title()
+                return [(moveID, displayName, None)]
             
+            #ability
             if itemType == 'Ability':
                 rows = []
                 if gen == 'Any':
@@ -124,7 +137,9 @@ def searchEncyclopedia(criteria, limit=200):
         except:
             return []
         
-    #else build filtered list
+    #if no direct query, build filtered list
+
+    #limits results to improve performance
     def getFirstN(items):
         return items[:limit]
     
@@ -162,7 +177,9 @@ def searchEncyclopedia(criteria, limit=200):
         
         rows = []
         for name, dexNum in getFirstN(sorted(candidates.items(), key=lambda x: x[1])):
-            rows.append((dexNum, str(name).replace('-', ' ').title(), spriteURLFromDexNum(dexNum, genNum)))
+                displayName = str(name).replace('-', ' ').title()
+                spriteURL = getSpriteURL(dexNum, genNum)
+                rows.append((dexNum, displayName, spriteURL))
         return rows
     
     #move list
@@ -217,6 +234,7 @@ def searchEncyclopedia(criteria, limit=200):
     
     return []
 #---------Item Class---------#
+#represents pokeAPI item
 class Item:
     def __init__(self, itemGroup, id, chosenGen):
 

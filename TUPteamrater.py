@@ -9,18 +9,21 @@ ALLTYPES = ['normal','fire','water','electric','grass','ice','fighting','poison'
             'ground','flying','psychic','bug','rock','ghost','dragon',
             'dark','steel','fairy']
 
+#formats text into displayed format
 def titleName(text):
     if not text:
         return ''
     return str(text).replace('-', ' ').title()
 
-def sortedPairs(i, minVal=1):
+#sorts key-value pairs
+def sortPairs(i, minVal=1):
     items = [(key, value) for key, value in i.items() if value >= minVal]
     items.sort(key=lambda x: (-x[1], x[0]))
     return items
 
+#gets all type relationships
 def getTypeChart():
-    #could use pokeAPI to get type relationships, but hard coded instead to improve performance by reducing loading times
+    #could use pokeAPI to get type relationships, but coded here instead to improve performance by reducing loading times
     typeChart = {
         "normal": {"rock": 0.5, "ghost": 0.0, "steel": 0.5},
         "fire": {"fire": 0.5, "water": 0.5, "grass": 2.0, "ice": 2.0, "bug": 2.0, "rock": 0.5, "dragon": 0.5, "steel": 2.0},
@@ -43,11 +46,13 @@ def getTypeChart():
         }
     return typeChart
 
+#formats type text
 def normaliseType(t):
     if t in (-1, None, '', 'none'):
         return None
     return str(t).strip().lower()
 
+#gets damage mult from type relationship
 def getTypeMultiplier(attackType, defendType):
     attackType = normaliseType(attackType)
     defendType = normaliseType(defendType)
@@ -58,6 +63,7 @@ def getTypeMultiplier(attackType, defendType):
     chart = getTypeChart()
     return chart.get(attackType, {}).get(defendType, 1.0)
 
+#gets total damage mult
 def getDamageTakenMult(attackType, defendType1, defendType2):
     mult1 = getTypeMultiplier(attackType, defendType1)
     if defendType2:
@@ -66,72 +72,7 @@ def getDamageTakenMult(attackType, defendType1, defendType2):
         mult2 = 1.0
     return mult1*mult2
 
-def analyseTeam(teamSlots, moveTypeLookup=None):
-    stats = getTeamAnalysisStats(teamSlots, moveTypeLookup)
-    if stats['teamSize'] == 0:
-        return 'Your team is empty. Please add Pokémon first'
-    
-    weak = stats['weak']
-    resist = stats['resist']
-    immune = stats['immune']
-    coverage = stats['coverage']
-    typeCounts = stats['typeCounts']
-
-    overlaps = sortedPairs(typeCounts, 2)
-    weaknesses = sortedPairs(weak, 1)
-    resistances = sortedPairs(resist, 1)
-    immunities = sortedPairs(immune, 1)
-
-    missingCoverage = [t for t in ALLTYPES if coverage.get(t, 0) == 0]
-    lowCoverage = [t for t in ALLTYPES if coverage.get(t, 0) == 1]
-
-    #create analysis report
-    lines = []
-    lines.append(f"Team Size: {stats['teamSize']}/6\n")
-
-    #type overlap
-    lines.append('Type Overlaps:')
-    if overlaps:
-        lines.extend([f' - {titleName(t)}: {count}' for t, count in overlaps])
-    else:
-        lines.append(" - None")
-    lines.append('')
-
-    #weaknesses
-    lines.append('Team Weaknesses:')
-    if weaknesses:
-        lines.extend([f' - {titleName(t)}: {count}' for t, count in weaknesses])
-    else:
-        lines.append(" - None")
-    lines.append('')
-
-    #resistances
-    lines.append('Team Resistances:')
-    if resistances:
-        lines.extend([f' - {titleName(t)}: {count}' for t, count in resistances])
-    else:
-        lines.append(" - None")
-    lines.append('')
-
-    #immunities
-    lines.append('Team Immunities:')
-    if immunities:
-        lines.extend([f' - {titleName(t)}: {count}' for t, count in immunities])
-    else:
-        lines.append(" - None")
-    lines.append('')
-
-    lines.append('Offensive Coverage:')
-    if missingCoverage:
-        lines.append(' - No super-effective coverage for: ' + ', '.join(titleName(t) for t in missingCoverage))
-    else:
-        lines.append(' - You have at least one super-effective option for every type.')
-
-    if lowCoverage:
-        lines.append(' - Only one super-effective option for: ' + ', '.join(titleName(t) for t in lowCoverage))
-
-    return '\n'.join(lines)
-
+#analyses inputted teams offensive and defensive type relationships, returning dictionary of statistics
 def getTeamAnalysisStats(teamSlots, moveTypeLookup=None):
     mons = [mon for mon in teamSlots if mon]
     if not mons:
@@ -187,7 +128,8 @@ def getTeamAnalysisStats(teamSlots, moveTypeLookup=None):
 
     return {'typeCounts': typeCounts, 'weak': weak, 'resist': resist, 'immune': immune, 'coverage': coverage, 'teamSize': len(mons)}
 
-def getMonAttackTypes(mon, moveTypeLookup):
+#gets the types of each move
+def getMonMoveTypes(mon, moveTypeLookup):
     attackTypes = set()
     if moveTypeLookup is not None:
         for moveName in (mon.get('moves') or []):
@@ -204,6 +146,7 @@ def getMonAttackTypes(mon, moveTypeLookup):
             attackTypes.add(type2)
     return attackTypes
 
+#scores teams relationship with chosen games key trainer battles
 def scoreTrainerType(typeList, mons, moveTypeLookup):
     #mixed teams skip scoring
     if not typeList or 'mixed' in typeList:
@@ -215,7 +158,7 @@ def scoreTrainerType(typeList, mons, moveTypeLookup):
     for mon in mons:
         defType1 = normaliseType(mon.get('type1'))
         defType2 = normaliseType(mon.get('type2'))
-        atkTypes = getMonAttackTypes(mon, moveTypeLookup)
+        atkTypes = getMonMoveTypes(mon, moveTypeLookup)
 
         #can mon hit for any trainer type for super effective
         super = False
@@ -248,24 +191,30 @@ def scoreTrainerType(typeList, mons, moveTypeLookup):
     
     return {'coverageMons': coverageMons, 'weakMons': weakMons, 'note': ''}
 
-
+#creates and returns a report of the teams relationship with key trainer battles
 def getTrainerReport(teamSlots, gameKey, moveTypeLookup=None):
+    #gets trainer data for chosen game
     data = TRAINERSBYGAME.get(gameKey)
     if not data:
-        return f'No trainer data available for: {gameKey}'
+        return f'No trainer data available for: {titleName(gameKey)}'
 
+    #gets user team stats
     stats = getTeamAnalysisStats(teamSlots, moveTypeLookup)
     if stats['teamSize'] == 0:
         return 'Your team is empty. Please add Pokémon first.'
     
+    #only filled team slots
     mons = [mon for mon in teamSlots if mon]
 
     lines = []
-    
+
+    #gyms
     lines.append('GYM MATCHUPS:')
     for gym in data.get('gyms', []):
         name = gym.get('name', 'Gym')
         types = [normaliseType(t) for t in (gym.get('types') or []) if normaliseType(t)]
+
+        #scores team against trainer types
         result = scoreTrainerType(types, mons, moveTypeLookup)
         if types:
             typeText = ', '.join(titleName(t) for t in types)
@@ -278,10 +227,13 @@ def getTrainerReport(teamSlots, gameKey, moveTypeLookup=None):
         lines.append(f'   - Coverage: {result["coverageMons"]}/{stats["teamSize"]} team members')
         lines.append(f'   - Weakness: {result["weakMons"]}/{stats["teamSize"]} team members\n')
 
+    #elite four
     lines.append('ELITE FOUR:')
     for elite in data.get('elite_four', []):
         name = elite.get('name', 'Elite Four')
         types = [normaliseType(t) for t in (elite.get('types') or []) if normaliseType(t)]
+
+        #scores team against trainer types
         result = scoreTrainerType(types, mons, moveTypeLookup)
         if types:
             typeText = ', '.join(titleName(t) for t in types)
@@ -296,6 +248,7 @@ def getTrainerReport(teamSlots, gameKey, moveTypeLookup=None):
 
     return '\n'.join(lines)
 
+#determines whether a type is strong against another
 def strongAgainst(defType):
     strong = []
     for atk in ALLTYPES:
@@ -303,12 +256,14 @@ def strongAgainst(defType):
             strong.append(atk)
     return strong
 
+#determines whether a type is resisted by a given type combination
 def resists(atkType, defType1, defType2):
     mult = getDamageTakenMult(atkType, defType1, defType2)
     
     #return True if resists/immune otherwise False
     return mult == 0.0 or mult <= 0.5
 
+#suggests pokemon to improve team
 def getRecommendedMons(teamSlots, chosenGen, gameVersions=None, limit=10, moveTypeLookup=None):
     #step 1: find team's missing offensive coverage
     #step 2: find top weaknesses
@@ -348,7 +303,7 @@ def getRecommendedMons(teamSlots, chosenGen, gameVersions=None, limit=10, moveTy
     for t in desiredTypes:
         #uses same search as in encyclopedia
         criteria = {'itemType': 'Pokémon', 'query': '', 'gen': str(gen), 'type': t}
-        rows = TUPitems.searchEncyclopedia(criteria, limit=25)
+        rows = TUPitems.searchEncyclopedia(criteria, limit=1)
         for dexNum, displayName, spriteURL in rows:
             if dexNum in teamDexNums or dexNum in seenDex:
                 continue #skips to next loop

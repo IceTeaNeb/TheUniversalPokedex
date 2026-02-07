@@ -187,6 +187,7 @@ def addUserDexMon(userID, dexMonID, HP, Atk, Def, SpA, SpD, Spe):
     conn.commit()
     conn.close()
 
+#adds mon to database
 def addMonFull(userID, dexID, monGen, monData, moves="", ability="", stats=None):
     #monData is dictionary with keys:
     #dexNum, monName, species, type1, type2, height, weight, bst, catchRate, 
@@ -296,6 +297,7 @@ def searchMonsForButtons(criteria):
 
     return rows
 
+#searches through database based on filters, returns minimum data to display on cards
 def searchDexMonsForButtons(userID, dexID, criteria):    
     #connects to database
     conn = sqlite3.connect('TUP.db')
@@ -370,7 +372,8 @@ def searchDexMonsForButtons(userID, dexID, criteria):
 
     return rows
 
-def returnMon(monID):   #returns the details of a single Pokémon from the database
+#returns the details from tblMon
+def returnMon(monID):   
     #connects to database
     conn = sqlite3.connect('TUP.db')
     conn.row_factory = sqlite3.Row
@@ -393,6 +396,7 @@ def returnMon(monID):   #returns the details of a single Pokémon from the datab
     else:
         return None
 
+#return details from tblDexMon and corresponding tblMon
 def returnDexMon(dexMonID):
     #connects to database
     conn = sqlite3.connect('TUP.db')
@@ -416,7 +420,8 @@ def returnDexMon(dexMonID):
         return dict(row)
     else:
         return None
-    
+
+#
 def returnDexMonForUser(userID, dexMonID):
     #connects to database
     conn = sqlite3.connect('TUP.db')
@@ -442,7 +447,8 @@ def returnDexMonForUser(userID, dexMonID):
         return dict(row)
     else:
         return None
-    
+
+#returns MonID with dexNum
 def getMonIDByDexNum(dexNum):
     #connects to database
     conn = sqlite3.connect('TUP.db')
@@ -465,7 +471,8 @@ def getMonIDByDexNum(dexNum):
     else:
         return None
 
-def deleteMon(dexMonID): #deletes an entered Pokémon from the database
+#deletes an entered Pokémon from the database
+def deleteMon(dexMonID): 
     #connects to database
     conn = sqlite3.connect('TUP.db')
     curs = conn.cursor()
@@ -487,6 +494,7 @@ def deleteMon(dexMonID): #deletes an entered Pokémon from the database
     conn.commit()
     conn.close()
 
+#checks a dex exists
 def ensureDexExists(dexID, gen, version="Default"):
     #connects to database
     conn = sqlite3.connect('TUP.db')
@@ -513,6 +521,7 @@ def ensureDexExists(dexID, gen, version="Default"):
     conn.commit()
     conn.close()
 
+#checks account exists
 def checkLogin(username, password):
     hashedPass = hashlib.sha256(password.encode()).hexdigest()
 
