@@ -322,7 +322,7 @@ class mainWindow(tk.Tk):
 
         #back button
         self.backButton = ttk.Button(self.mainFrame, text='Back', style='enter.TButton', command=self.backToGen)
-        self.backButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(0, 10))
+        self.backButton.grid(row=0, column=0, sticky=tk.EW, pady=(15, 10), padx=(10, 10))
 
         #delete button
         self.deleteButton = ttk.Button(self.mainFrame, text='Delete', style='enter.TButton', command=self.onDeleteSelectedMon)
@@ -340,7 +340,7 @@ class mainWindow(tk.Tk):
 
         #add mon button
         self.addButton = ttk.Button(self.mainFrame, text='Add', style='enter.TButton', command=self.openAddMonPopup)
-        self.addButton.grid(row=1, column=0, columnspan=2, sticky=tk.EW, pady=(0, 10), padx=(0, 10))
+        self.addButton.grid(row=1, column=1, sticky=tk.EW, pady=(0, 15), padx=(10, 10))
 
         #filter
         self.filtersFrame = ttk.Frame(self.mainFrame)
@@ -359,6 +359,10 @@ class mainWindow(tk.Tk):
         heightOptions = [('Any', 'Any'), ('Small', 'Small'), ('Medium', 'Medium'), ('Large', 'Large')]
         weightOptions = [('Any', 'Any'), ('Light', 'Light'), ('Medium', 'Medium'), ('Heavy', 'Heavy')]
         bstOptions = [('Any', 'Any'), ('Low', 'Low'), ('Medium', 'Medium'), ('High', 'High')]
+
+        #compare dex button
+        self.compareButton = ttk.Button(self.mainFrame, text='Compare', style='enter.TButton', command=self.openDexComparePopup)
+        self.compareButton.grid(row=1, column=0, padx=(10, 10), pady=(0, 15), sticky=tk.EW)
 
         #type1 menubutton
         self.type1MenuButton = ttk.Menubutton(self.filtersFrame, text='Type 1', style='filter.TMenubutton')
@@ -828,6 +832,8 @@ class mainWindow(tk.Tk):
 
     #shows details of a specific Pokémon in the database
     def showMonDetails(self, dexMonID):
+        self.makeDetailsInfoTextArea(self.detailsInfoOuterFrame)
+
         mon = TUPdatabase.returnDexMonForUser(self.currentUserID, dexMonID)
         
         if not mon:
@@ -1091,28 +1097,13 @@ class mainWindow(tk.Tk):
         self.detailsSpriteLabel.grid(row=1, column=0, pady=(0, 10))
         self.detailsSpriteLabel.grid_remove()
 
-        #scrollable info label
         self.detailsInfoOuterFrame = ttk.Frame(self.detailsFrame, style='TFrame')
         self.detailsInfoOuterFrame.grid(row=2, column=0, sticky=tk.NSEW)
 
         self.detailsInfoOuterFrame.rowconfigure(0, weight=1)
         self.detailsInfoOuterFrame.columnconfigure(0, weight=1)
 
-        self.detailsInfoScrollbar = ttk.Scrollbar(self.detailsInfoOuterFrame, orient='vertical')
-        self.detailsInfoScrollbar.grid(row=0, column=1, sticky=tk.NS)
-
-        self.detailsInfoText = tk.Text(self.detailsInfoOuterFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['bgcolor'], fg=self.colours['fgcolor'], font=(self.FONT, 12), relief='flat', highlightthickness=0, padx=8, pady=8)
-        self.detailsInfoText.grid(row=0, column=0, sticky=tk.NSEW)
-
-        self.detailsInfoScrollbar.configure(command=self.detailsInfoText.yview)
-
-        self.detailsInfoText.configure(state='disabled')
-
-        def scrollWheel(event):
-            self.detailsInfoText.yview_scroll(int(-1*(event.delta/120)), 'units')
-
-        self.detailsInfoText.bind('<Enter>', lambda e: self.detailsInfoText.bind_all('<MouseWheel>', scrollWheel))
-        self.detailsInfoText.bind('<Leave>', lambda e: self.detailsInfoText.unbind_all('<MouseWheel>'))
+        self.makeDetailsInfoTextArea(self.detailsInfoOuterFrame)
 
         #sprite reference
         self.detailsSpriteRef = None
@@ -1160,14 +1151,14 @@ class mainWindow(tk.Tk):
                 return None
             else:
                 return int(text)
-        
+            
         #when user presses add button
         def onAdd():
             userIn = self.dexNumEntry.get()
             monKey = self.normaliseMonInput(userIn)
 
             if not monKey:
-                showinfo("Error", "Please enter a Dex number or Pokédex name.")
+                showinfo("Error", "Please enter a Dex number or Pokémon name.")
                 return
 
             #Pokémon object
@@ -1227,8 +1218,143 @@ class mainWindow(tk.Tk):
             self.refreshPokedexResults()
         
         #on add button
-        self.onAddButton = ttk.Button(popup, text='Add', style='small.TButton', command=onAdd)
-        self.onAddButton.grid(row=1, column=0, columnspan=2, padx=10, pady=15, sticky=tk.EW)
+        self.onAddButton = ttk.Button(self.addMonFrame, text='Add', style='small.TButton', command=onAdd)
+        self.onAddButton.grid(row=2+len(statNames), column=0, columnspan=2, padx=10, pady=(15, 0), sticky=tk.EW)
+
+        self.centerPopup(popup)
+
+    #create popup window when user wants to compare two Pokédexes
+    def openDexComparePopup(self):
+        self.popup = tk.Toplevel(self)
+        self.popup.rowconfigure(0, weight=1)
+        self.popup.columnconfigure(0, weight=1)
+        self.popup.configure(bg=self.colours['framecolor'])
+        self.popup.title('Compare Pokédex')
+        self.popup.geometry('300x150')
+        self.popup.resizable(False, False)
+        self.popup.grab_set()
+
+        try:
+            self.popup.iconbitmap(self.iconPath)
+        except:
+            pass
+
+        self.popupOuterFrame = ttk.Frame(self.popup, padding=15, style='TFrame')
+        self.popupOuterFrame.grid(row=0, column=0, sticky=tk.NSEW)
+        self.popupOuterFrame.columnconfigure(0, weight=1)
+
+        self.popupTitleLabel = ttk.Label(self.popupOuterFrame, text='Select generation to compare with:', anchor='center', style='progress.TLabel')
+        self.popupTitleLabel.grid(row=0, column=0, padx=10, pady=(5, 10), sticky=tk.EW)
+
+        self.popupGenVar = tk.IntVar(value=1)
+        self.popupGenMenu = ttk.Combobox(self.popupOuterFrame, textvariable=self.popupGenVar, values=[1,2,3,4,5,6,7,8,9], state='readonly', justify='center')
+        self.popupGenMenu.grid(row=1, column=0, padx=40, pady=(0, 12), sticky=tk.EW)
+
+        #buttons
+        self.popupButtonFrame = ttk.Frame(self.popupOuterFrame, style='TFrame')
+        self.popupButtonFrame.grid(row=2, column=0, sticky=tk.EW)
+        self.popupButtonFrame.columnconfigure(0, weight=1)
+        self.popupButtonFrame.columnconfigure(1, weight=1)
+
+        def onCancel():
+            self.popup.destroy()
+        
+        def onConfirm():
+            compareGen = int(self.popupGenVar.get())
+            self.popup.destroy()
+            self.showDexComparison(compareGen)
+        
+        self.popupCancelButton = ttk.Button(self.popupButtonFrame, text='Cancel', style='enter.TButton', command=onCancel)
+        self.popupCancelButton.grid(row=0, column=0, padx=(0, 8), sticky=tk.EW)
+
+        self.popupConfirmButton = ttk.Button(self.popupButtonFrame, text='Compare', style='enter.TButton', command=onConfirm)
+        self.popupConfirmButton.grid(row=0, column=1, padx=(8, 0), sticky=tk.EW)
+
+        #finishes laying out widgets before adjusting popup dimensions
+        self.popup.update_idletasks()
+        width = max(340, self.popup.winfo_reqwidth())
+        height = max(170, self.popup.winfo_reqheight())
+        self.popup.geometry(f'{width}x{height}')
+
+        self.popupGenMenu.focus_set()
+        self.centerPopup(self.popup)
+
+    def showDexComparison(self, compareGen):
+        currentGen = self.currentDexID
+        self.detailsNameLabel.configure(text='Pokédex Comparison')
+        self.hideDetailsSprite()
+
+        self.clearDetailsInfoArea()
+
+        currentGen = self.currentDexID
+
+        #get caught nums
+        caughtNum1 = TUPdatabase.getUserDexCaughtCount(self.currentUserID, currentGen)
+        caughtNum2 = TUPdatabase.getUserDexCaughtCount(self.currentUserID, compareGen)
+
+        #get total nums
+        totalNum1 = TUPitems.getTotalSpeciesUpToGen(currentGen)
+        totalNum2 = TUPitems.getTotalSpeciesUpToGen(compareGen)
+
+        #percentage
+        if totalNum1:
+            percentCurrent = caughtNum1/totalNum1*100
+        else:
+            percentCurrent = 0
+
+        if totalNum2:
+            percentCompare = caughtNum2/totalNum2*100
+        else:
+            percentCompare = 0
+
+        self.detailsInfoOuterFrame.rowconfigure(1, weight=1)
+        self.detailsInfoOuterFrame.columnconfigure(0, weight=1)
+
+        #summary label
+        summaryLabel = ttk.Label(self.detailsInfoOuterFrame, text=(f'Gen {currentGen}: {caughtNum1}/{totalNum1} ({percentCurrent:.1f}%)\n'
+                                                          f'Gen {compareGen}: {caughtNum2}/{totalNum2} ({percentCompare:.1f}%)'
+                                                          ), 
+                                                          anchor='center', font=(self.FONT, 18))
+        summaryLabel.grid(row=0, column=0, padx=10, pady=10, sticky=tk.EW)
+
+        #chart canvas
+        self.chartCanvas = tk.Canvas(self.detailsInfoOuterFrame, height=300, bg=self.colours['bgcolor'], highlightthickness=0)
+        self.chartCanvas.grid(row=1, column=0, padx=20, pady=10, sticky=tk.NSEW)
+
+        self.chartCanvas.update_idletasks()
+
+        canvasWidth = max(1, self.chartCanvas.winfo_width())
+        canvasHeight = max(1, self.chartCanvas.winfo_height())
+
+        padX = 35
+        padTop = 25
+        padBottom = 45
+
+        baseY = canvasHeight-padBottom
+        maxHeight = max(1, baseY-padTop)
+
+        gap = 40
+        barWidth = max(30, min(90, (canvasWidth-(padX*2)-gap)//2))
+
+        x1 = padX+(canvasWidth-(padX*2)-(barWidth*2)-gap)//2
+        x2 = x1+barWidth+gap
+
+        #scale
+        heightCurrent = (percentCurrent/100)*maxHeight
+        heightCompare = (percentCompare/100)*maxHeight
+
+        self.chartCanvas.create_rectangle(x1, baseY-heightCurrent, x1+barWidth, baseY, fill='#c1dbf3', outline=self.colours['fgcolor'])
+        self.chartCanvas.create_rectangle(x2, baseY-heightCompare, x2+barWidth, baseY, fill='#ff7171', outline=self.colours['fgcolor'])
+
+        self.chartCanvas.create_line(padX, baseY, canvasWidth-padX, baseY, fill=self.colours['fgcolor'])
+
+        #bar labels
+        self.chartCanvas.create_text(x1+barWidth//2, baseY+18, text=f'Gen {currentGen}', font=(self.FONT, 14), fill=self.colours['fgcolor'])
+        self.chartCanvas.create_text(x2+barWidth//2, baseY+18, text=f'Gen {compareGen}', font=(self.FONT, 14), fill=self.colours['fgcolor'])
+
+        #percentage labels
+        self.chartCanvas.create_text(x1+barWidth, baseY-heightCurrent-12, text=f'{percentCurrent:.1f}%', font=(self.FONT, 14), fill=self.colours['fgcolor'])
+        self.chartCanvas.create_text(x2+barWidth, baseY-heightCompare-12, text=f'{percentCompare:.1f}%', font=(self.FONT, 14), fill=self.colours['fgcolor'])
 
     #when user clicks delete button while Pokémon is selected
     def onDeleteSelectedMon(self):
@@ -1324,7 +1450,7 @@ class mainWindow(tk.Tk):
         #maps to numeric ranges
         heightMap = {'Any': (None, None), 'Small': (0.0, 1.0), 'Medium': (1.0, 2.0), 'Large': (2.0, 100.0),}
         weightMap = {'Any': (None, None), 'Light': (0.0, 25.0), 'Medium': (25.0, 100.0), 'Heavy': (100.0, 10000.0),}
-        bstMap = {'Any': (None, None), 'Low': (0, 300), 'Medium': (300, 500), 'High': (500, 9999),}
+        bstMap = {'Any': (None, None), 'Low': (0, 299), 'Medium': (300, 499), 'High': (500, 9999),}
 
         heightMin, heightMax = heightMap.get(self.heightClassVar.get(), (None, None))
         weightMin, weightMax = weightMap.get(self.weightClassVar.get(), (None, None))
@@ -2086,6 +2212,53 @@ class mainWindow(tk.Tk):
         else:
             self.showMainMenu()
     
+    def centerPopup(self, win):
+        win.update_idletasks()
+        width = win.winfo_width()
+        height = win.winfo_height()
+        screenWidth = win.winfo_screenwidth()
+        screenHeight = win.winfo_screenheight()
+
+        if width <= 1:
+            width = win.winfo_reqwidth()
+        if height <= 1:
+            height = win.winfo_reqheight()
+
+        x = (screenWidth//2)-(width//2)
+        y = (screenHeight//2)-(height//2)
+
+        win.geometry(f'{width}x{height}+{x}+{y}')
+
+    def makeDetailsInfoTextArea(self, parentFrame=None):
+        if parentFrame is None:
+            parentFrame = self.detailsInfoOuterFrame
+        
+        for widget in parentFrame.winfo_children():
+            widget.destroy()
+
+        parentFrame.rowconfigure(0, weight=1)
+        parentFrame.columnconfigure(0, weight=1)
+
+        self.detailsInfoScrollbar = ttk.Scrollbar(parentFrame, orient='vertical')
+        self.detailsInfoScrollbar.grid(row=0, column=1, sticky=tk.NS)
+
+        self.detailsInfoText = tk.Text(parentFrame, wrap='word', yscrollcommand=self.detailsInfoScrollbar.set, bg=self.colours['bgcolor'], fg=self.colours['fgcolor'], font=(self.FONT, 12), relief='flat', highlightthickness=0, padx=8, pady=8)
+        self.detailsInfoText.grid(row=0, column=0, sticky=tk.NSEW)
+
+        def scrollWheel(event):
+            self.detailsInfoText.yview_scroll(int(-1*(event.delta/120)), 'units')
+
+        self.detailsInfoText.bind('<Enter>', lambda e: self.detailsInfoText.bind_all('<MouseWheel>', scrollWheel))
+        self.detailsInfoText.bind('<Leave>', lambda e: self.detailsInfoText.unbind_all('<MouseWheel>'))
+        self.detailsInfoText.configure(state='disabled')
+
+        self.detailsInfoScrollbar.configure(command=self.detailsInfoText.yview)
+
+    #clears details in info area
+    def clearDetailsInfoArea(self):
+        if hasattr(self, 'detailsInfoOuterFrame'):
+            for widget in self.detailsInfoOuterFrame.winfo_children():
+                widget.destroy()
 
     #clears window
     def clearWindow(self):

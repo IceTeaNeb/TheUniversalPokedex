@@ -17,6 +17,17 @@ SPRITESUBPATH = {
     8: 'versions/generation-viii/icons',
     9: 'versions/generation-ix/scarlet-violet',
 }
+TOTALSPECIESBYGEN = {
+    1:151,
+    2:251,
+    3:386,
+    4:493,
+    5:649,
+    6:721,
+    7:809,
+    8:905,
+    9:1025
+}
 
 #---------functions----------#
 
@@ -114,25 +125,19 @@ def searchEncyclopedia(criteria, limit=200):
             
             #ability
             if itemType == 'Ability':
-                rows = []
-                if gen == 'Any':
-                    try:
-                        abilityList = pb.ability()
-                        for entry in abilityList[:limit]:
-                            abilID = parseIDFromURL(getattr(entry, 'url', None))
-                            if abilID:
-                                name = str(entry.name).replace('-', ' ').title()
-                                rows.append((abilID, name, None))
-                    except:
+                if not query.isdigit():
+                    a = pb.ability(query)
+                else:
+                    a = pb.ability(int(query))
+
+                if gen != 'Any':
+                    fromGen = a.generation.id
+                    if int(gen) != int(fromGen):
                         return []
-                    
-                    return rows
                 
-                g = pb.generation(int(gen))
-                for i in g.abilities[:limit]:
-                    abilID = parseIDFromURL(getattr(i, 'url', None))
-                    if abilID:
-                        rows.append((abilID, str(i.name).replace('-', ' ').title(), None))
+                abilID = int(a.id)
+                displayName = str(a.name).replace('-', ' ').title()
+                return [(abilID, displayName, None)]
 
         except:
             return []
@@ -233,6 +238,15 @@ def searchEncyclopedia(criteria, limit=200):
         return rows
     
     return []
+
+def getTotalSpeciesUpToGen(genNum):
+    try:
+        genNum = int(genNum)
+    except:
+        return 0
+    
+    return TOTALSPECIESBYGEN.get(genNum, 0)
+
 #---------Item Class---------#
 #represents pokeAPI item
 class Item:
@@ -446,88 +460,3 @@ class Mon(Item):
         return self._eggCycle
     def getSpriteURL(self):
         return self._spriteURL
-
-
-###---temporary functions for displaying Item details---###
-#display option menu
-def menu():
-    userIn = int(input("[0]: Pokémon Details\n[1]: Move Details\n[2]: Ability Details\nEnter Option:"))
-    if userIn == 0:
-        outMon()
-    elif userIn == 1:
-        outMove()
-    elif userIn == 2:
-        outAbility()
-
-#display Pokemon details
-def outMon():
-    monID = int(input("Enter Pokémon ID: "))
-    chosenGen = int(input("Enter Generation Number: "))
-    myMon = Mon('mon', monID, chosenGen)
-    dexNum = myMon.getDexNum()
-    type1 = myMon.getType1()
-    type2 = myMon.getType2()
-    HP = myMon.getHP()
-    Atk = myMon.getAtk()
-    Def = myMon.getDef()
-    SpA = myMon.getSpA()
-    SpD = myMon.getSpD()
-    Spe = myMon.getSpe()
-    BST = myMon.getBST()
-    stats = [BST, HP, Atk, Def, SpA, SpD, Spe]
-    evoList = myMon.getEvoList()
-    preEvo = myMon.getPreEvo()
-    name = myMon.getItemName()
-    locations = myMon.getLocations()
-    moves = myMon.getMoves()
-
-    #sprite = myMon.getSprite()
-
-
-    print('Name: ' + name)
-    print('Pokédex Number: ', dexNum)
-    print('Type 1: ', type1)
-    print('Type 2: ', type2)
-    print('Stats [BST, HP, Atk, Def, SpA, SpD, Spe]: ', stats)
-    print('Evolution Chain: ', evoList)
-    print('Pre-Evolution: ', preEvo)
-    print('Locations: ', locations)
-    print('Moves: ', moves)
-
-#display moves details
-def outMove():
-    moveID = int(input("Enter Move ID: "))
-    myMove = Move('move', moveID)
-    name = myMove.getItemName()
-    flavorText = myMove.getFlavorText()
-    accuracy = myMove.getAccuracy()
-    effectChance = myMove.getEffectChance()
-    PP = myMove.getPP()
-    priority = myMove.getPriority()
-    power = myMove.getPower()
-    dmgClass = myMove.getDmgClass()
-    target = myMove.getTarget()
-    statChanges = myMove.getStatChanges()
-    moveType = myMove.getType()
-
-    print('Name: ', name)
-    print('Flavor Text: ', flavorText)
-    print('Stat Changes: ', statChanges)
-    print('Accuracy: ', accuracy)
-    print('Effect Chance: ', effectChance)
-    print('PP: ', PP)
-    print('Priority: ', priority)
-    print('Power: ', power)
-    print('Damage Class: ', dmgClass)
-    print('Target: ', target)
-    print('Type: ', moveType)
-
-#display ability details
-def outAbility():
-    abilID = int(input("Enter Ability ID: "))
-    myAbil = Ability('ability', abilID)
-    name = myAbil.getItemName()
-    flavorText = myAbil.getFlavorText()
-
-    print('Name: ', name)
-    print('Flavor Text: ', flavorText)

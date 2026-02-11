@@ -521,6 +521,29 @@ def ensureDexExists(dexID, gen, version="Default"):
     conn.commit()
     conn.close()
 
+#returns number of pokemon the user has caught in a certain dex
+def getUserDexCaughtCount(userID, dexID):
+    conn = sqlite3.connect('TUP.db')
+    curs = conn.cursor()
+
+    curs.execute('''
+        SELECT COUNT(*)
+        FROM tblUserDexMon udm
+        JOIN tblDexMon dm ON dm.DexMonID = udm.DexMonID
+        WHERE udm.UserID = ?
+        AND dm.DexID = ?
+    ''', 
+    (userID, dexID)
+    )
+
+    result = curs.fetchone()
+    conn.close()
+
+    if result:
+        return int(result[0])
+    else:
+        return 0
+
 #checks account exists
 def checkLogin(username, password):
     hashedPass = hashlib.sha256(password.encode()).hexdigest()
